@@ -218,8 +218,15 @@ function fineTest(){
     scaricaBackup("Backend non configurato.");
     return;
   }
-  fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body: pacchetto })
-    .then(()=>{ schermo.innerHTML = riepilogoHtml + "<p style='font-size:13px;color:#2e7d32;'>Dati inviati correttamente. Grazie!</p>"; })
+  var linkBackupSempreVisibile =
+    "<p style='text-align:center;font-size:12px;margin-top:14px;'><a href='#' id='link-backup-manuale' style='color:#7f8c8d;'>Scarica comunque una copia di riserva sul telefono</a></p>";
+
+  fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body: pacchetto, mode:'no-cors' })
+    .then(()=>{
+      schermo.innerHTML = riepilogoHtml + "<p style='font-size:13px;color:#2e7d32;'>Dati inviati. Grazie!</p>" + linkBackupSempreVisibile;
+      var link = document.getElementById('link-backup-manuale');
+      if (link) link.onclick = function(ev){ ev.preventDefault(); scaricaBackup(""); };
+    })
     .catch(()=>{ scaricaBackup("Invio al server non riuscito."); });
 }
 
