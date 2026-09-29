@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Test IAT</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:Arial, sans-serif; background:#e9ecef; -webkit-tap-highlight-color: transparent; }
+  #app { max-width:480px; margin:0 auto; min-height:100vh; background:white; display:flex; flex-direction:column; }
+  .schermo { flex:1; display:flex; flex-direction:column; padding:clamp(16px, 4vw, 32px); }
+  h1,h2,h3 { text-align:center; }
+  h2 { font-size: clamp(20px, 3vw, 26px); }
+  input, select, button { font-size:16px; }
+  input, select { width:100%; padding:12px; margin:6px 0 14px; border:1px solid #ccc; border-radius:6px; }
+  #pulsante-continua, #campo-conferma { padding:16px; width:100%; background:#343a40; color:white; border:none; border-radius:8px; font-size:18px; cursor:pointer; }
+  .barra-categorie { display:flex; justify-content:space-between; font-weight:bold; font-size:clamp(13px, 2vw, 17px); padding:10px 4px; }
+  .barra-categorie span:last-child { text-align:right; }
+  .parola-centro { flex:1; display:flex; align-items:center; justify-content:center; text-align:center; min-height:120px; }
+  .parola-centro h1 { font-size: clamp(28px, 6vw, 46px); margin:0; }
+  .pulsanti-risposta { display:flex; gap:clamp(8px, 2vw, 16px); padding-bottom:10px; }
+  .pulsante-lato { flex:1; padding:clamp(18px, 3vw, 26px) 8px; font-size:clamp(14px, 2vw, 18px); font-weight:bold; border:3px solid #343a40; border-radius:10px; background:white; color:#343a40; cursor:pointer; transition:background .1s; }
+  .pulsante-lato:active { background:#343a40; color:white; }
+  @media (hover:hover) { .pulsante-lato:hover { background:#f1f3f5; } .pulsante-lato:hover:active { background:#343a40; } }
+  .x-rossa { position:fixed; top:45%; left:0; right:0; text-align:center; font-size:70px; color:#c0392b; font-weight:bold; pointer-events:none; }
+  #errore-form { color:#c0392b; font-size:13px; min-height:18px; text-align:center; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:10px; }
+  th,td { padding:6px; border-bottom:1px solid #dee2e6; }
+  th { background:#343a40; color:white; }
+
+  /* Tablet e desktop: la card si allarga e si centra, invece di restare
+     una striscia stretta; il resto (font, pulsanti) scala con clamp() già sopra */
+  @media (min-width: 640px) {
+    #app { max-width:700px; margin:32px auto; border-radius:14px; box-shadow:0 6px 30px rgba(0,0,0,0.10); min-height:auto; }
+    .schermo { min-height:600px; }
+    .pulsante-lato { padding-top:34px; padding-bottom:34px; }
+  }
+  @media (min-width: 1024px) {
+    #app { max-width:820px; margin:48px auto; }
+  }
+</style>
+</head>
+<body>
+<div id="app"><div class="schermo" id="schermo"><p style="text-align:center;">Caricamento...</p></div></div>
+
+<script>
+// ============================================================
+// ATTENZIONE PRIMA DI PUBBLICARE:
+// sostituisci qui sotto l'URL con quello del TUO Google Apps Script
+// (vedi istruzioni "come collegare Google Sheet" a parte).
+// ============================================================
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0gN-TObLm1t4qTxa8YLgbKHggckLjBxNzcJw_MJLEGjy54r3V3Ii7dEvsVoldUU2TTw/exec";
+
+var schermo = document.getElementById('schermo');
+var REGIONI = ["Abruzzo","Basilicata","Calabria","Campania","Emilia-Romagna","Friuli-Venezia Giulia","Lazio","Liguria","Lombardia","Marche","Molise","Piemonte","Puglia","Sardegna","Sicilia","Toscana","Trentino-Alto Adige","Umbria","Valle d'Aosta","Veneto"];
+
+var target_femminile = ['Giulia','Rossella','Asia','Giada','Rosa','Alessia'];
+var target_maschile = ['Andrea','Mario','Samuele','Gabriele','Filippo','Marco'];
+
+var argomenti = [
+  { id:'motori', titolo:'MOTORI', etichettaA:'Guida goffa', etichettaB:'Guida sicura',
+    attrA:['Graffia la fiancata','Sbaglia strada','Frena in ritardo','Effettua un sorpasso pericoloso','Viola il codice della strada'],
+    attrB:['Guida con sicurezza','Parcheggia bene','Frena in tempo','Effettua un sorpasso in sicurezza','Rispetta il codice della strada'] },
+  { id:'corpo', titolo:'CORPO', etichettaA:'Cura elaborata', etichettaB:'Cura essenziale',
+    attrA:['Fa la manicure regolarmente','Fa la skincare','Fa la depilazione','Si pesa regolarmente',"Ha l'armadio pieno di vestiti","Manifesta una preoccupazione eccessiva per l'aumento di peso"],
+    attrB:['Usa solo sapone ed acqua','Si pettina e basta','Si veste senza pensarci','Favorisce aumento di massa corporale','Pulizia unghie corte','Possiede pochi capi'] },
+  { id:'domestico', titolo:'RUOLI DOMESTICI', etichettaA:'Mansioni per la cura e pulizia', etichettaB:'Mansioni per la manutenzione tecnica',
+    attrA:['Stira i capi di casa','Lava i piatti',"Passare l'aspirapolvere",'Rifà i letti','Portare i figli dal dottore','Assistere un famigliare malato'],
+    attrB:['Ripara il rubinetto','Aggiusta la presa elettrica','Cambia la lampadina','Controlla una perdita',"Tagliare l'erba del giardino",'Usare il trapano'] }
+];
+
+function shuffle(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+// ---------------- motore a fasi (sostituisce jsPsych) ----------------
+var trials = [];          // dati raccolti, uno per trial
+var extra = {};           // id/età/sesso/regione/ordine..., uniti a ogni trial
+var timeline = [];
+var indice = -1;
+
+function avanti(){
+  indice++;
+  if (indice >= timeline.length) { return fineTest(); }
+  timeline[indice]();
+}
+function registra(record){
+  trials.push(Object.assign({trial_index: indice}, extra, record));
+  avanti();
+}
+
+// schermata di solo testo, avanza al tocco
+function schermataTesto(html){
+  return function(){
+    schermo.innerHTML = html + "<button id='pulsante-continua' style='margin-top:20px;'>Continua</button>";
+    document.getElementById('pulsante-continua').onclick = function(){ registra({trial_type:'istruzioni'}); };
+  };
+}
+
+// modulo iniziale id/età/sesso/regione
+function schermataDatiPartecipante(){
+  return function(){
+    var opz = REGIONI.map(r => "<option value='"+r+"'>"+r+"</option>").join("");
+    schermo.innerHTML =
+      "<h2>Prima di iniziare</h2><p style='color:#555;font-size:14px;text-align:center;'>Questi dati servono solo per l'analisi statistica in forma aggregata.</p>"+
+      "<label>Codice identificativo</label><input id='c-id' type='text'>"+
+      "<label>Età</label><input id='c-eta' type='number' min='16' max='99'>"+
+      "<label>Sesso</label><select id='c-sesso'><option value=''>-- seleziona --</option><option>Femmina</option><option>Maschio</option><option>Preferisco non specificare</option></select>"+
+      "<label>Regione di residenza</label><select id='c-regione'><option value=''>-- seleziona --</option>"+opz+"</select>"+
+      "<div id='errore-form'></div><button id='campo-conferma'>Continua</button>";
+    document.getElementById('campo-conferma').onclick = function(){
+      var id = document.getElementById('c-id').value.trim();
+      var eta = parseInt(document.getElementById('c-eta').value, 10);
+      var sesso = document.getElementById('c-sesso').value;
+      var regione = document.getElementById('c-regione').value;
+      if (!id || !eta || !sesso || !regione){ document.getElementById('errore-form').textContent = "Compila tutti i campi."; return; }
+      if (isNaN(eta) || eta<16 || eta>99){ document.getElementById('errore-form').textContent = "Età non valida."; return; }
+      extra = Object.assign(extra, {participant_id:id, eta:eta, sesso:sesso, regione:regione});
+      registra({trial_type:'dati-partecipante'});
+    };
+  };
+}
+
+// un trial dello IAT con due pulsanti a tocco (sinistra/destra)
+function trialIat(parola, categoria, lato, etichettaSx, etichettaDx, blocco, topicId, condizione){
+  return function(){
+    var inizio = performance.now();
+    var numeroErrori = 0, primoLato = null, rtPrimoTentativo = null;
+    schermo.innerHTML =
+      "<div class='barra-categorie'><span>"+[].concat(etichettaSx).join(' / ')+"</span><span>"+[].concat(etichettaDx).join(' / ')+"</span></div>"+
+      "<div class='parola-centro'><h1>"+parola+"</h1></div>"+
+      "<div class='pulsanti-risposta'>"+
+      "<button class='pulsante-lato' id='btn-sx'>"+[].concat(etichettaSx).join(' / ')+"</button>"+
+      "<button class='pulsante-lato' id='btn-dx'>"+[].concat(etichettaDx).join(' / ')+"</button></div>";
+
+    function tocco(latoScelto){
+      var rt = performance.now() - inizio;
+      if (primoLato === null){ primoLato = latoScelto; rtPrimoTentativo = rt; }
+      if (latoScelto === lato){
+        registra({
+          rt: rt, rt_primo_tentativo: rtPrimoTentativo, correct: numeroErrori===0, numero_errori: numeroErrori,
+          risposta: latoScelto, primo_lato_scelto: primoLato,
+          stimulus_name: parola, category: categoria, block: blocco, topic: topicId, condizione: condizione,
+          trial_type: 'iat-touch'
+        });
+      } else {
+        numeroErrori++;
+        var x = document.createElement('div'); x.className='x-rossa'; x.textContent='✕';
+        document.body.appendChild(x); setTimeout(()=>x.remove(), 300);
+      }
+    }
+    document.getElementById('btn-sx').onpointerdown = function(){ tocco('left'); };
+    document.getElementById('btn-dx').onpointerdown = function(){ tocco('right'); };
+  };
+}
+
+function timelineArgomento(argomento, stereoPrima){
+  var fasi = [];
+  fasi.push(schermataTesto("<h2>"+argomento.titolo+"</h2><p style='text-align:center;'>Tocca Continua per iniziare questa parte.</p>"));
+
+  fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>Smista i NOMI in FEMMINILE o MASCHILE toccando il pulsante giusto.</p>"));
+  var t1 = [];
+  target_femminile.forEach(w=>t1.push(trialIat(w,'femminile','left',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null)));
+  target_maschile.forEach(w=>t1.push(trialIat(w,'maschile','right',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null)));
+  fasi = fasi.concat(shuffle(t1));
+
+  fasi.push(schermataTesto("<h3>Test 2</h3><p style='text-align:center;'>Smista le ATTIVITÀ in "+argomento.etichettaA.toUpperCase()+" o "+argomento.etichettaB.toUpperCase()+".</p>"));
+  var t2 = [];
+  argomento.attrA.forEach(w=>t2.push(trialIat(w,'attrA','left',[argomento.etichettaA],[argomento.etichettaB],'test2_attributo',argomento.id,null)));
+  argomento.attrB.forEach(w=>t2.push(trialIat(w,'attrB','right',[argomento.etichettaA],[argomento.etichettaB],'test2_attributo',argomento.id,null)));
+  fasi = fasi.concat(shuffle(t2));
+
+  function blocco(femminileConA, numeroTest){
+    var ts=[], sx = femminileConA?['FEMMINILE',argomento.etichettaA]:['MASCHILE',argomento.etichettaA];
+    var dx = femminileConA?['MASCHILE',argomento.etichettaB]:['FEMMINILE',argomento.etichettaB];
+    var cond = femminileConA?'stereotipica':'controstereotipica';
+    target_femminile.forEach(w=>ts.push(trialIat(w,'femminile',femminileConA?'left':'right',sx,dx,'combinato',argomento.id,cond)));
+    target_maschile.forEach(w=>ts.push(trialIat(w,'maschile',femminileConA?'right':'left',sx,dx,'combinato',argomento.id,cond)));
+    argomento.attrA.forEach(w=>ts.push(trialIat(w,'attrA','left',sx,dx,'combinato',argomento.id,cond)));
+    argomento.attrB.forEach(w=>ts.push(trialIat(w,'attrB','right',sx,dx,'combinato',argomento.id,cond)));
+    var nota = numeroTest===3 ? "Le stesse parole di prima ora vanno smistate con le nuove categorie qui sopra."
+      : "Attenzione: sono le STESSE parole del test precedente, ma le categorie si sono scambiate di lato: il pulsante giusto per ogni parola è quindi opposto a prima.";
+    fasi.push(schermataTesto("<h3>Test "+numeroTest+"</h3><p style='text-align:center;'>Categorie combinate:<br>"+sx.join(' o ')+" / "+dx.join(' o ')+"</p><p style='color:#7f8c8d;font-size:14px;text-align:center;'>"+nota+"</p>"));
+    fasi = fasi.concat(shuffle(ts));
+  }
+  blocco(stereoPrima, 3);
+  blocco(!stereoPrima, 4);
+  return fasi;
+}
+
+function fineTest(){
+  function media(a){ return a.reduce((x,y)=>x+y,0)/a.length; }
+  function sintesi(topicId){
+    var t = trials.filter(t=>t.trial_type==='iat-touch' && t.block==='combinato' && t.topic===topicId && t.rt<10000);
+    var s = t.filter(t=>t.condizione==='stereotipica').map(t=>t.rt);
+    var c = t.filter(t=>t.condizione==='controstereotipica').map(t=>t.rt);
+    if(!s.length || !c.length) return null;
+    var mS=media(s), mC=media(c), diff=mC-mS;
+    var esito = Math.abs(diff)<50 ? "Nessuna differenza rilevante" : (diff>0 ? "Più rapido nella combinazione stereotipica" : "Più rapido nella combinazione controstereotipica");
+    return {mS:Math.round(mS), mC:Math.round(mC), diff:Math.round(diff), esito:esito};
+  }
+  var righe = argomenti.map(a=>{
+    var s = sintesi(a.id);
+    if(!s) return "<tr><td>"+a.titolo+"</td><td colspan='3'>dati insufficienti</td></tr>";
+    return "<tr><td>"+a.titolo+"</td><td>"+s.mS+" ms</td><td>"+s.mC+" ms</td><td>"+s.esito+"</td></tr>";
+  }).join("");
+  var riepilogoHtml = "<h3>Test completato!</h3><p style='font-size:13px;color:#555;'>Riepilogo indicativo (l'analisi ufficiale è quella del notebook):</p>"+
+    "<table><tr><th>Argomento</th><th>Media stereo.</th><th>Media controstereo.</th><th>Esito</th></tr>"+righe+"</table>";
+
+  var pacchetto = JSON.stringify(trials);
+
+  function scaricaBackup(motivo){
+    var blob = new Blob([pacchetto], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href=url; a.download = 'dati_iat_'+(extra.participant_id||'anonimo')+'.json'; a.click();
+    schermo.innerHTML = riepilogoHtml + "<p style='color:#b45309;font-size:13px;'>"+motivo+" I tuoi dati sono stati scaricati sul telefono: invia il file alla docente.</p>";
+  }
+
+  if (APPS_SCRIPT_URL.indexOf('INCOLLA_QUI') !== -1){
+    scaricaBackup("Backend non configurato.");
+    return;
+  }
+  fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body: pacchetto })
+    .then(()=>{ schermo.innerHTML = riepilogoHtml + "<p style='font-size:13px;color:#2e7d32;'>Dati inviati correttamente. Grazie!</p>"; })
+    .catch(()=>{ scaricaBackup("Invio al server non riuscito."); });
+}
+
+// ---------------- avvio ----------------
+timeline.push(schermataDatiPartecipante());
+timeline.push(schermataTesto(
+  "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Il test ha tre parti, ciascuna con 4 fasi. Ad ogni parola tocca il pulsante della categoria giusta, il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
+));
+var ordine = shuffle(argomenti);
+var stereoPrima = Math.random() < 0.5;
+extra.ordine_argomenti = ordine.map(a=>a.id).join(' > ');
+extra.ordine_blocchi_combinati = stereoPrima ? 'stereotipica_prima' : 'controstereotipica_prima';
+ordine.forEach(a => { timeline = timeline.concat(timelineArgomento(a, stereoPrima)); });
+
+avanti();
+</script>
+</body>
+</html>
