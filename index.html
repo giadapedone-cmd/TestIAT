@@ -63,15 +63,14 @@ var argomenti = [
     attrB:['Guida con sicurezza','Parcheggia bene','Frena in tempo','Effettua un sorpasso in sicurezza','Rispetta il codice della strada'] },
   { id:'corpo', titolo:'CORPO', etichettaA:'Cura elaborata', etichettaB:'Cura essenziale',
     attrA:['Fa la manicure regolarmente','Fa la skincare','Fa la depilazione','Si pesa regolarmente',"Ha l'armadio pieno di vestiti","Manifesta una preoccupazione eccessiva per l'aumento di peso"],
-    attrB:['Usa solo sapone ed acqua','Si pettina e basta','Si veste senza pensarci','Favorisce aumento di massa corporale','Pulizia unghie corte','Possiede pochi capi'] },
+    attrB:['Usa solo sapone ed acqua','Si pettina e basta','Si veste senza pensarci','Non si preoccupa di mettere troppo peso','Usa solo lo shampoo per lavarsi i capelli','Possiede pochi capi'] },
   { id:'domestico', titolo:'RUOLI DOMESTICI', etichettaA:'Mansioni per la cura e pulizia', etichettaB:'Mansioni per la manutenzione tecnica',
-    attrA:['Stira i capi di casa','Lava i piatti',"Passare l'aspirapolvere",'Rifà i letti','Portare i figli dal dottore','Assistere un famigliare malato'],
-    attrB:['Ripara il rubinetto','Aggiusta la presa elettrica','Cambia la lampadina','Controlla una perdita',"Tagliare l'erba del giardino",'Usare il trapano'] }
+    attrA:['Stira i capi di casa','Lava i piatti',"Passa l'aspirapolvere",'Rifà i letti','Porta i figli dal dottore','Assiste un famigliare malato'],
+    attrB:['Ripara il rubinetto','Aggiusta la presa elettrica','Cambia la lampadina','Controlla una perdita',"Taglia l'erba del giardino",'Usa il trapano'] }
 ];
 
 function shuffle(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 
-// ---------------- motore a fasi (sostituisce jsPsych) ----------------
 var trials = [];          // dati raccolti, uno per trial
 var extra = {};           // id/età/sesso/regione/ordine..., uniti a ogni trial
 var timeline = [];
@@ -104,7 +103,7 @@ function schermataDatiPartecipante(){
       "<label>Codice identificativo</label><input id='c-id' type='text'>"+
       "<label>Età</label><input id='c-eta' type='number' min='16' max='99'>"+
       "<label>Sesso</label><select id='c-sesso'><option value=''>-- seleziona --</option><option>Femmina</option><option>Maschio</option><option>Preferisco non specificare</option></select>"+
-      "<label>Regione di provenienza</label><select id='c-regione'><option value=''>-- seleziona --</option>"+opz+"</select>"+
+      "<label>Regione di residenza</label><select id='c-regione'><option value=''>-- seleziona --</option>"+opz+"</select>"+
       "<div id='errore-form'></div><button id='campo-conferma'>Continua</button>";
     document.getElementById('campo-conferma').onclick = function(){
       var id = document.getElementById('c-id').value.trim();
@@ -128,8 +127,8 @@ function trialIat(parola, categoria, lato, etichettaSx, etichettaDx, blocco, top
       "<div class='barra-categorie'><span>"+[].concat(etichettaSx).join(' / ')+"</span><span>"+[].concat(etichettaDx).join(' / ')+"</span></div>"+
       "<div class='parola-centro'><h1>"+parola+"</h1></div>"+
       "<div class='pulsanti-risposta'>"+
-      "<button class='pulsante-lato' id='btn-sx'>"+[].concat(etichettaSx).join(' / ')+"</button>"+
-      "<button class='pulsante-lato' id='btn-dx'>"+[].concat(etichettaDx).join(' / ')+"</button></div>";
+      "<button class='pulsante-lato' id='btn-sx'>◀ SINISTRA<br><span style='font-weight:normal;font-size:0.85em;'>"+[].concat(etichettaSx).join(' / ')+"</span></button>"+
+      "<button class='pulsante-lato' id='btn-dx'>DESTRA ▶<br><span style='font-weight:normal;font-size:0.85em;'>"+[].concat(etichettaDx).join(' / ')+"</span></button></div>";
 
     function tocco(latoScelto){
       var rt = performance.now() - inizio;
@@ -156,13 +155,13 @@ function timelineArgomento(argomento, stereoPrima){
   var fasi = [];
   fasi.push(schermataTesto("<h2>"+argomento.titolo+"</h2><p style='text-align:center;'>Tocca Continua per iniziare questa parte.</p>"));
 
-  fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>Smista i NOMI in FEMMINILE o MASCHILE toccando il pulsante giusto.</p>"));
+  fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>FEMMINILE è in alto a sinistra, MASCHILE in alto a destra. Tocca SINISTRA o DESTRA a seconda del nome mostrato.</p>"));
   var t1 = [];
   target_femminile.forEach(w=>t1.push(trialIat(w,'femminile','left',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null)));
   target_maschile.forEach(w=>t1.push(trialIat(w,'maschile','right',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null)));
   fasi = fasi.concat(shuffle(t1));
 
-  fasi.push(schermataTesto("<h3>Test 2</h3><p style='text-align:center;'>Smista le ATTIVITÀ in "+argomento.etichettaA.toUpperCase()+" o "+argomento.etichettaB.toUpperCase()+".</p>"));
+  fasi.push(schermataTesto("<h3>Test 2</h3><p style='text-align:center;'>"+argomento.etichettaA.toUpperCase()+" è in alto a sinistra, "+argomento.etichettaB.toUpperCase()+" in alto a destra. Tocca SINISTRA o DESTRA a seconda dell'attività mostrata.</p>"));
   var t2 = [];
   argomento.attrA.forEach(w=>t2.push(trialIat(w,'attrA','left',[argomento.etichettaA],[argomento.etichettaB],'test2_attributo',argomento.id,null)));
   argomento.attrB.forEach(w=>t2.push(trialIat(w,'attrB','right',[argomento.etichettaA],[argomento.etichettaB],'test2_attributo',argomento.id,null)));
@@ -188,22 +187,62 @@ function timelineArgomento(argomento, stereoPrima){
 
 function fineTest(){
   function media(a){ return a.reduce((x,y)=>x+y,0)/a.length; }
+  function deviazioneStandard(a){
+    var m = media(a);
+    var varCampionaria = a.reduce((s,x)=>s+(x-m)*(x-m),0) / (a.length-1);
+    return Math.sqrt(varCampionaria);
+  }
+// dscore: qui serve solo per dare
+  // un riscontro immediato allo studente
+  function calcolaDScore(topicId){
+    var t = trials.filter(tr=>tr.trial_type==='iat-touch' && tr.block==='combinato' && tr.topic===topicId && tr.rt<10000);
+    var stereo = t.filter(tr=>tr.condizione==='stereotipica');
+    var contro = t.filter(tr=>tr.condizione==='controstereotipica');
+    if (!stereo.length || !contro.length) return null;
+
+    var rtStereoValidi = stereo.filter(tr=>tr.rt>=300).map(tr=>tr.rt);
+    var rtControValidi = contro.filter(tr=>tr.rt>=300).map(tr=>tr.rt);
+    if (!rtStereoValidi.length || !rtControValidi.length) return null;
+
+    var erroreStereo = 1 - (stereo.filter(tr=>tr.correct).length / stereo.length);
+    var erroreContro = 1 - (contro.filter(tr=>tr.correct).length / contro.length);
+
+    var mediaStereo = media(rtStereoValidi) + 600*erroreStereo;
+    var mediaContro = media(rtControValidi) + 600*erroreContro;
+    var sd = deviazioneStandard(stereo.map(tr=>tr.rt).concat(contro.map(tr=>tr.rt)));
+    if (!sd) return null;
+    return (mediaContro - mediaStereo) / sd;
+  }
+
   function sintesi(topicId){
     var t = trials.filter(t=>t.trial_type==='iat-touch' && t.block==='combinato' && t.topic===topicId && t.rt<10000);
     var s = t.filter(t=>t.condizione==='stereotipica').map(t=>t.rt);
     var c = t.filter(t=>t.condizione==='controstereotipica').map(t=>t.rt);
     if(!s.length || !c.length) return null;
-    var mS=media(s), mC=media(c), diff=mC-mS;
-    var esito = Math.abs(diff)<50 ? "Nessuna differenza rilevante" : (diff>0 ? "Più rapido nella combinazione stereotipica" : "Più rapido nella combinazione controstereotipica");
-    return {mS:Math.round(mS), mC:Math.round(mC), diff:Math.round(diff), esito:esito};
+    var mS=media(s), mC=media(c);
+    var d = calcolaDScore(topicId);
+    return {mS:Math.round(mS), mC:Math.round(mC), d:d};
   }
+
+  function frasePerD(d){
+    if (d === null) return "dati insufficienti per calcolare il punteggio";
+    var assoluto = Math.abs(d);
+    var intensita = assoluto < 0.15 ? "trascurabile" : assoluto < 0.35 ? "lieve" : assoluto < 0.65 ? "moderata" : "marcata";
+    if (assoluto < 0.15) return "punteggio vicino allo zero: nessuna associazione implicita rilevante";
+    return "associazione implicita " + intensita + ", " + (d > 0 ? "nella direzione stereotipica" : "nella direzione opposta allo stereotipo");
+  }
+
   var righe = argomenti.map(a=>{
     var s = sintesi(a.id);
     if(!s) return "<tr><td>"+a.titolo+"</td><td colspan='3'>dati insufficienti</td></tr>";
-    return "<tr><td>"+a.titolo+"</td><td>"+s.mS+" ms</td><td>"+s.mC+" ms</td><td>"+s.esito+"</td></tr>";
+    var dTesto = s.d===null ? "n.d." : s.d.toFixed(2);
+    return "<tr><td>"+a.titolo+"</td><td>"+s.mS+" ms</td><td>"+s.mC+" ms</td><td><b>"+dTesto+"</b></td><td style='text-align:left;'>"+frasePerD(s.d)+"</td></tr>";
   }).join("");
-  var riepilogoHtml = "<h3>Test completato!</h3><p style='font-size:13px;color:#555;'>Riepilogo indicativo (l'analisi ufficiale è quella del notebook):</p>"+
-    "<table><tr><th>Argomento</th><th>Media stereo.</th><th>Media controstereo.</th><th>Esito</th></tr>"+righe+"</table>";
+
+  var riepilogoHtml = "<h3>Test completato, grazie!</h3>"+
+    "<p style='font-size:13px;color:#555;'>Ecco un riepilogo del tuo tempo di risposta medio nelle due combinazioni di ogni argomento, e il relativo punteggio D (l'indicatore standard usato in questo tipo di test).</p>"+
+    "<table><tr><th>Argomento</th><th>Tempo medio combinazione 1</th><th>Tempo medio combinazione 2</th><th>Punteggio D</th><th>Cosa significa</th></tr>"+righe+"</table>"+
+    "<p style='font-size:12px;color:#7f8c8d;margin-top:10px;'>Il punteggio D varia in teoria da <b>-2</b> a <b>+2</b> (in pratica quasi sempre tra -1 e +1): un valore <b>vicino allo zero</b> significa che non è emersa nessuna associazione implicita rilevante; più il valore si allontana dallo zero (positivo o negativo), più forte è l'associazione in quella direzione. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo specifico test.</p>";
 
   var pacchetto = JSON.stringify(trials);
 
@@ -221,19 +260,29 @@ function fineTest(){
   var linkBackupSempreVisibile =
     "<p style='text-align:center;font-size:12px;margin-top:14px;'><a href='#' id='link-backup-manuale' style='color:#7f8c8d;'>Scarica comunque una copia di riserva sul telefono</a></p>";
 
-  fetch(APPS_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain'}, body: pacchetto, mode:'no-cors' })
-    .then(()=>{
-      schermo.innerHTML = riepilogoHtml + "<p style='font-size:13px;color:#2e7d32;'>Dati inviati. Grazie!</p>" + linkBackupSempreVisibile;
-      var link = document.getElementById('link-backup-manuale');
-      if (link) link.onclick = function(ev){ ev.preventDefault(); scaricaBackup(""); };
-    })
-    .catch(()=>{ scaricaBackup("Invio al server non riuscito."); });
+  function mostraSuccesso(){
+    schermo.innerHTML = riepilogoHtml + "<p style='font-size:13px;color:#2e7d32;'>Dati inviati. Grazie!</p>" + linkBackupSempreVisibile;
+    var link = document.getElementById('link-backup-manuale');
+    if (link) link.onclick = function(ev){ ev.preventDefault(); scaricaBackup(""); };
+  }
+
+  // Usiamo XMLHttpRequest invece di fetch(): Apps Script risponde con un
+  // redirect, e fetch() con una POST seguita da redirect la trasforma in una
+  // GET (perdendo il corpo/i dati per strada), mentre XHR non ha questo
+  // comportamento ed è il modo raccomandato per inviare dati a un web app
+  // Apps Script da una pagina esterna.
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', APPS_SCRIPT_URL, true);
+  xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+  xhr.onload = function(){ mostraSuccesso(); };
+  xhr.onerror = function(){ scaricaBackup("Invio al server non riuscito."); };
+  xhr.send(pacchetto);
 }
 
 // ---------------- avvio ----------------
 timeline.push(schermataDatiPartecipante());
 timeline.push(schermataTesto(
-  "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Il test ha tre parti, ciascuna con 4 fasi. Ad ogni parola tocca il pulsante della categoria giusta, il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
+  "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Il test ha tre parti, ciascuna con 4 fasi. In ogni fase vedrai due categorie: una in alto a sinistra e una in alto a destra. Ad ogni parola, tocca <b>SINISTRA</b> se la parola appartiene alla categoria mostrata in alto a sinistra, <b>DESTRA</b> se appartiene a quella in alto a destra. Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
 ));
 var ordine = shuffle(argomenti);
 var stereoPrima = Math.random() < 0.5;
