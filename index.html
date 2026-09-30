@@ -132,7 +132,10 @@ function schermataDatiPartecipante(){
 }
 
 // un trial dello IAT con due pulsanti a tocco (sinistra/destra)
-function trialIat(parola, categoria, lato, etichettaSx, etichettaDx, blocco, topicId, condizione){
+// numeroTest (1-4) e domanda (il testo della consegna di questa fase) sono
+// stati aggiunti solo per essere salvati nel json di ogni prova, come
+// richiesto: non cambiano nulla di cosa vede o come risponde lo studente.
+function trialIat(parola, categoria, lato, etichettaSx, etichettaDx, blocco, topicId, condizione, numeroTest, domanda){
   return function(){
     var inizio = performance.now();
     var numeroErrori = 0, primoLato = null, rtPrimoTentativo = null;
@@ -151,6 +154,8 @@ function trialIat(parola, categoria, lato, etichettaSx, etichettaDx, blocco, top
           rt: rt, rt_primo_tentativo: rtPrimoTentativo, correct: numeroErrori===0, numero_errori: numeroErrori,
           risposta: latoScelto, primo_lato_scelto: primoLato,
           stimulus_name: parola, category: categoria, block: blocco, topic: topicId, condizione: condizione,
+          numero_test: numeroTest, domanda_test: domanda,
+          etichetta_sinistra: [].concat(etichettaSx).join(' / '), etichetta_destra: [].concat(etichettaDx).join(' / '),
           trial_type: 'iat-touch'
         });
       } else {
@@ -168,26 +173,29 @@ function timelineArgomento(argomento, stereoPrima){
   var fasi = [];
   fasi.push(schermataTesto("<h2>"+argomento.titolo+"</h2><p style='text-align:center;'>Tocca Continua per iniziare il primo test.</p>"));
 
+  var domandaTest1 = "Smista i NOMI in FEMMINILE (sinistra) o MASCHILE (destra).";
   fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>FEMMINILE è in alto a sinistra, MASCHILE in alto a destra. Tocca SINISTRA o DESTRA a seconda del nome mostrato.</p>"));
   var t1 = [];
-  target_femminile.forEach(w=>t1.push(trialIat(w,'femminile','left',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null)));
-  target_maschile.forEach(w=>t1.push(trialIat(w,'maschile','right',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null)));
+  target_femminile.forEach(w=>t1.push(trialIat(w,'femminile','left',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null,1,domandaTest1)));
+  target_maschile.forEach(w=>t1.push(trialIat(w,'maschile','right',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null,1,domandaTest1)));
   fasi = fasi.concat(shuffle(t1));
 
+  var domandaTest2 = "Smista le ATTIVITÀ in "+argomento.etichettaA.toUpperCase()+" (sinistra) o "+argomento.etichettaB.toUpperCase()+" (destra).";
   fasi.push(schermataTesto("<h3>Test 2</h3><p style='text-align:center;'>"+argomento.etichettaA.toUpperCase()+" è in alto a sinistra, "+argomento.etichettaB.toUpperCase()+" in alto a destra. Tocca SINISTRA o DESTRA a seconda dell'attività mostrata.</p>"));
   var t2 = [];
-  argomento.attrA.forEach(w=>t2.push(trialIat(w,'attrA','left',[argomento.etichettaA],[argomento.etichettaB],'test2_attributo',argomento.id,null)));
-  argomento.attrB.forEach(w=>t2.push(trialIat(w,'attrB','right',[argomento.etichettaA],[argomento.etichettaB],'test2_attributo',argomento.id,null)));
+  argomento.attrA.forEach(w=>t2.push(trialIat(w,'attrA','left',[argomento.etichettaA],[argomento.etichettaB],'test2_attributo',argomento.id,null,2,domandaTest2)));
+  argomento.attrB.forEach(w=>t2.push(trialIat(w,'attrB','right',[argomento.etichettaA],[argomento.etichettaB],'test2_attributo',argomento.id,null,2,domandaTest2)));
   fasi = fasi.concat(shuffle(t2));
 
   function blocco(femminileConA, numeroTest){
     var ts=[], sx = femminileConA?['FEMMINILE',argomento.etichettaA]:['MASCHILE',argomento.etichettaA];
     var dx = femminileConA?['MASCHILE',argomento.etichettaB]:['FEMMINILE',argomento.etichettaB];
     var cond = femminileConA?'stereotipica':'controstereotipica';
-    target_femminile.forEach(w=>ts.push(trialIat(w,'femminile',femminileConA?'left':'right',sx,dx,'combinato',argomento.id,cond)));
-    target_maschile.forEach(w=>ts.push(trialIat(w,'maschile',femminileConA?'right':'left',sx,dx,'combinato',argomento.id,cond)));
-    argomento.attrA.forEach(w=>ts.push(trialIat(w,'attrA','left',sx,dx,'combinato',argomento.id,cond)));
-    argomento.attrB.forEach(w=>ts.push(trialIat(w,'attrB','right',sx,dx,'combinato',argomento.id,cond)));
+    var domandaCombinata = "Smista NOMI e ATTIVITÀ tra "+sx.join(' + ')+" (sinistra) e "+dx.join(' + ')+" (destra).";
+    target_femminile.forEach(w=>ts.push(trialIat(w,'femminile',femminileConA?'left':'right',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
+    target_maschile.forEach(w=>ts.push(trialIat(w,'maschile',femminileConA?'right':'left',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
+    argomento.attrA.forEach(w=>ts.push(trialIat(w,'attrA','left',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
+    argomento.attrB.forEach(w=>ts.push(trialIat(w,'attrB','right',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
     var nota = numeroTest===3 ? "Le stesse parole di prima ora vanno smistate con le nuove categorie qui sopra."
       : "Attenzione: sono le STESSE parole del test precedente, ma le categorie si sono scambiate di lato: il pulsante giusto per ogni parola è quindi opposto a prima.";
     fasi.push(schermataTesto("<h3>Test "+numeroTest+"</h3><p style='text-align:center;'>Categorie combinate:<br>"+sx.join(' o ')+" / "+dx.join(' o ')+"</p><p style='color:#7f8c8d;font-size:14px;text-align:center;'>"+nota+"</p>"));
@@ -233,9 +241,7 @@ function fineTest(){
     var s = t.filter(t=>t.condizione==='stereotipica').map(t=>t.rt);
     var c = t.filter(t=>t.condizione==='controstereotipica').map(t=>t.rt);
     if(!s.length || !c.length) return null;
-    var mS=media(s), mC=media(c);
-    var d = calcolaDScore(topicId);
-    return {mS:Math.round(mS), mC:Math.round(mC), d:d};
+    return {mS:Math.round(media(s)), mC:Math.round(media(c))};
   }
 
   function frasePerD(d){
@@ -246,69 +252,91 @@ function fineTest(){
     return "associazione implicita " + intensita + ", " + (d > 0 ? "nella direzione stereotipica" : "nella direzione opposta allo stereotipo");
   }
 
-  var righe = argomenti.map(a=>{
-    var s = sintesi(a.id);
-    if(!s) return "<tr><td>"+a.titolo+"</td><td colspan='3'>dati insufficienti</td></tr>";
-    var dTesto = s.d===null ? "n.d." : s.d.toFixed(2);
-    return "<tr><td>"+a.titolo+"</td><td>"+s.mS+" ms</td><td>"+s.mC+" ms</td><td><b>"+dTesto+"</b></td><td style='text-align:left;'>"+frasePerD(s.d)+"</td></tr>";
-  }).join("");
-
-  // la riconosce dal trial_type e la scrive in un foglio SEPARATO
+  // riga di riepilogo per partecipante (un D-score per argomento): la
+  // riconosce dal trial_type e la scrive in un foglio SEPARATO
   // ("riepilogo"), cosi' da avere sia i dati grezzi sia, gia' pronta,
   // la tabella un-rigo-per-partecipante che serve per lo studio aggregato.
+  var dScorePerArgomento = {};
   var riepilogoPartecipante = Object.assign({ trial_type: 'riepilogo-dscore' }, extra);
   argomenti.forEach(a=>{
     var d = calcolaDScore(a.id);
+    dScorePerArgomento[a.id] = d;
     riepilogoPartecipante['d_score_'+a.id] = d===null ? '' : Number(d.toFixed(3));
   });
   trials.push(riepilogoPartecipante);
 
-  var riepilogoHtml = "<h3>Test completato, grazie!</h3>"+
-    "<p style='font-size:13px;color:#555;'>Ecco un riepilogo del tuo tempo di risposta medio nelle due combinazioni di ogni argomento, e il relativo punteggio D (l'indicatore standard usato in questo tipo di test).</p>"+
-    "<table><tr><th>Argomento</th><th>Tempo medio combinazione 1</th><th>Tempo medio combinazione 2</th><th>Punteggio D</th><th>Cosa significa</th></tr>"+righe+"</table>"+
-    "<p style='font-size:12px;color:#7f8c8d;margin-top:10px;'>Il punteggio D varia in teoria da <b>-2</b> a <b>+2</b> : un valore <b>vicino allo zero</b> significa che non è emersa nessuna associazione implicita rilevante; più il valore si allontana dallo zero (positivo o negativo), più forte è l'associazione in quella direzione. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo specifico test.</p>";
-
   var pacchetto = JSON.stringify(trials);
 
-  function scaricaBackup(motivo){
+  function scaricaBackup(){
     var blob = new Blob([pacchetto], {type:'application/json'});
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a'); a.href=url; a.download = 'dati_iat_'+(extra.participant_id||'anonimo')+'.json'; a.click();
-    schermo.innerHTML = riepilogoHtml + "<p style='color:#b45309;font-size:13px;'>"+motivo+" I tuoi dati sono stati scaricati sul telefono: invia il file alla docente.</p>";
   }
 
-  if (APPS_SCRIPT_URL.indexOf('INCOLLA_QUI') !== -1){
-    scaricaBackup("Backend non configurato.");
-    return;
+  // L'invio parte SUBITO, in background, mentre lo studente scorre le
+  // schermate di risultato: cosi' quando arriva all'ultima schermata
+  // l'esito (riuscito o no) è quasi sempre già noto.
+  var statoInvio = APPS_SCRIPT_URL.indexOf('INCOLLA_QUI') !== -1 ? 'non-configurato' : 'in-corso';
+  function aggiornaStatoSeSullUltimaSchermata(){
+    // se l'esito dell'invio arriva mentre lo studente è già sull'ultima
+    // schermata (caso raro, solo per chi tocca "Avanti" molto rapidamente),
+    // la ridisegna cosi' mostra l'esito vero invece di "Invio in corso..."
+    if (typeof mostraPagina === 'function' && schermoSuUltima) mostraPagina(pagine.length - 1);
   }
-  var linkBackupSempreVisibile =
-    "<p style='text-align:center;font-size:12px;margin-top:14px;'><a href='#' id='link-backup-manuale' style='color:#7f8c8d;'>Scarica comunque una copia di riserva sul telefono</a></p>";
-
-  function mostraSuccesso(){
-    schermo.innerHTML = riepilogoHtml + "<p style='font-size:13px;color:#2e7d32;'>Dati inviati. Grazie!</p>" + linkBackupSempreVisibile;
-    var link = document.getElementById('link-backup-manuale');
-    if (link) link.onclick = function(ev){ ev.preventDefault(); scaricaBackup(""); };
+  if (statoInvio === 'non-configurato') {
+    scaricaBackup();
+  } else {
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: pacchetto
+    }).then(function(){ statoInvio = 'ok'; aggiornaStatoSeSullUltimaSchermata(); })
+      .catch(function(){ statoInvio = 'fallito'; scaricaBackup(); aggiornaStatoSeSullUltimaSchermata(); });
   }
 
-  // Usiamo XMLHttpRequest invece di fetch(): Apps Script risponde con un
-  // redirect, e fetch() con una POST seguita da redirect la trasforma in una
-  // GET (perdendo il corpo/i dati per strada), mentre XHR non ha questo
-  // comportamento ed è il modo raccomandato per inviare dati a un web app
-  // Apps Script da una pagina esterna.
- fetch(APPS_SCRIPT_URL, {
-  method: 'POST',
-  mode: 'no-cors',
-  headers: {
-    'Content-Type': 'text/plain;charset=utf-8'
-  },
-  body: pacchetto
-})
-.then(function() {
-  mostraSuccesso();
-})
-.catch(function() {
-  scaricaBackup("Invio al server non riuscito.");
-});
+  // ------------------------------------------------------------------
+  // 6 SCHERMATE DI RISULTATO IN SEQUENZA (richiesta della docente): una
+  // pagina per argomento con i tempi medi delle due combinazioni, poi
+  // una pagina per argomento con il punteggio D. Lo studente avanza
+  // toccando "Avanti"; sull'ultima compare anche l'esito dell'invio.
+  // ------------------------------------------------------------------
+  function paginaTempi(a){
+    var s = sintesi(a.id);
+    if (!s) return "<h3>"+a.titolo+"</h3><p style='text-align:center;color:#7f8c8d;'>Dati insufficienti per questo argomento.</p>";
+    return "<h3>"+a.titolo+" — Tempi di risposta</h3>"+
+      "<p style='text-align:center;'>Tempo medio quando la tua risposta <b>confermava</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mS+" ms</span></p>"+
+      "<p style='text-align:center;'>Tempo medio quando la tua risposta <b>andava contro</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mC+" ms</span></p>";
+  }
+  function paginaDScore(a){
+    var d = dScorePerArgomento[a.id];
+    var dTesto = d===null ? "n.d." : d.toFixed(2);
+    return "<h3>"+a.titolo+" — Punteggio D</h3>"+
+      "<p style='text-align:center;font-size:30px;font-weight:bold;'>"+dTesto+"</p>"+
+      "<p style='text-align:center;'>"+frasePerD(d)+"</p>"+
+      "<p style='font-size:12px;color:#7f8c8d;text-align:center;margin-top:10px;'>Il punteggio D varia in teoria da <b>-2</b> a <b>+2</b>: vicino allo zero significa nessuna associazione implicita rilevante; più si allontana dallo zero (in positivo o in negativo), più forte è l'associazione in quella direzione. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo test.</p>";
+  }
+
+  var paginaFinaleExtra = ""; // aggiunta solo sull'ultima schermata
+  function testoStato(){
+    if (statoInvio === 'ok') return "<p style='font-size:13px;color:#2e7d32;text-align:center;'>Dati inviati. Grazie!</p>";
+    if (statoInvio === 'fallito' || statoInvio === 'non-configurato') return "<p style='font-size:13px;color:#b45309;text-align:center;'>Invio al server non riuscito: una copia di riserva è stata scaricata sul telefono, invia il file alla docente.</p>";
+    return "<p style='font-size:13px;color:#7f8c8d;text-align:center;'>Invio in corso...</p>";
+  }
+
+  var pagine = argomenti.map(paginaTempi).concat(argomenti.map(paginaDScore));
+  var schermoSuUltima = false;
+
+  function mostraPagina(i){
+    var isUltima = i === pagine.length - 1;
+    schermoSuUltima = isUltima;
+    var extraFinale = isUltima ? testoStato() : "";
+    schermo.innerHTML = "<div>"+pagine[i]+"</div>"+extraFinale+
+      "<button id='pulsante-avanti-risultati' style='margin-top:20px;'>"+(isUltima ? 'Fine' : 'Avanti')+"</button>";
+    document.getElementById('pulsante-avanti-risultati').onclick = function(){
+      if (!isUltima) mostraPagina(i+1);
+    };
+  }
+  mostraPagina(0);
 }
 
 // ---------------- avvio ----------------
