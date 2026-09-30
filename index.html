@@ -295,12 +295,20 @@ function fineTest(){
   // GET (perdendo il corpo/i dati per strada), mentre XHR non ha questo
   // comportamento ed è il modo raccomandato per inviare dati a un web app
   // Apps Script da una pagina esterna.
-  var xhr = new XMLHttpRequest();
-  xhr.open('POST', APPS_SCRIPT_URL, true);
-  xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
-  xhr.onload = function(){ mostraSuccesso(); };
-  xhr.onerror = function(){ scaricaBackup("Invio al server non riuscito."); };
-  xhr.send(pacchetto);
+ fetch(APPS_SCRIPT_URL, {
+  method: 'POST',
+  mode: 'no-cors',
+  headers: {
+    'Content-Type': 'text/plain;charset=utf-8'
+  },
+  body: pacchetto
+})
+.then(function() {
+  mostraSuccesso();
+})
+.catch(function() {
+  scaricaBackup("Invio al server non riuscito.");
+});
 }
 
 // ---------------- avvio ----------------
