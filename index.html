@@ -45,11 +45,11 @@
 
 <script>
 // ============================================================
-// ATTENZIONE PRIMA DI PUBBLICARE:
+// 
 // sostituisci qui sotto l'URL con quello del TUO Google Apps Script
 // (vedi istruzioni "come collegare Google Sheet" a parte).
 // ============================================================
-var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxoid5Mx6B0jNFAyx4URcQQvkub9A5aUAPPNl7EMEpDCy6xwv3WhN_U4bHrk-E5lz9_hg/exec";
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfh6ZXJQOahPkkx7MnlpZ_YP1JCtDv-zIkWuunNuywTX9MqupyGUu-3aD0nSpvx7IDvQ/exec";
 
 var schermo = document.getElementById('schermo');
 var REGIONI = ["Abruzzo","Basilicata","Calabria","Campania","Emilia-Romagna","Friuli-Venezia Giulia","Lazio","Liguria","Lombardia","Marche","Molise","Piemonte","Puglia","Sardegna","Sicilia","Toscana","Trentino-Alto Adige","Umbria","Valle d'Aosta","Veneto"];
@@ -71,7 +71,6 @@ var argomenti = [
 
 function shuffle(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 
-// ---------------- motore a fasi (sostituisce jsPsych) ----------------
 var trials = [];          // dati raccolti, uno per trial
 var extra = {};           // id/età/sesso/regione/ordine..., uniti a ogni trial
 var timeline = [];
