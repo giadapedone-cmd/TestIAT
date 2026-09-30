@@ -140,8 +140,8 @@ function trialIat(parola, categoria, lato, etichettaSx, etichettaDx, blocco, top
       "<div class='barra-categorie'><span>"+[].concat(etichettaSx).join(' / ')+"</span><span>"+[].concat(etichettaDx).join(' / ')+"</span></div>"+
       "<div class='parola-centro'><h1>"+parola+"</h1></div>"+
       "<div class='pulsanti-risposta'>"+
-      "<button class='pulsante-lato' id='btn-sx'>◀ SINISTRA<br><span style='font-weight:normal;font-size:0.85em;'>"+[].concat(etichettaSx).join(' / ')+"</span></button>"+
-      "<button class='pulsante-lato' id='btn-dx'>DESTRA ▶<br><span style='font-weight:normal;font-size:0.85em;'>"+[].concat(etichettaDx).join(' / ')+"</span></button></div>";
+      "<button class='pulsante-lato' id='btn-sx'>◀ SINISTRA<br><span style='font-weight:normal;font-size:0.85em;'>"+"</span></button>"+
+      "<button class='pulsante-lato' id='btn-dx'>DESTRA ▶<br><span style='font-weight:normal;font-size:0.85em;'>"+"</span></button></div>";
 
     function tocco(latoScelto){
       var rt = performance.now() - inizio;
@@ -166,7 +166,7 @@ function trialIat(parola, categoria, lato, etichettaSx, etichettaDx, blocco, top
 
 function timelineArgomento(argomento, stereoPrima){
   var fasi = [];
-  fasi.push(schermataTesto("<h2>"+argomento.titolo+"</h2><p style='text-align:center;'>Tocca Continua per iniziare questa parte.</p>"));
+  fasi.push(schermataTesto("<h2>"+argomento.titolo+"</h2><p style='text-align:center;'>Tocca Continua per iniziare il primo test.</p>"));
 
   fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>FEMMINILE è in alto a sinistra, MASCHILE in alto a destra. Tocca SINISTRA o DESTRA a seconda del nome mostrato.</p>"));
   var t1 = [];
@@ -314,7 +314,7 @@ function fineTest(){
 // ---------------- avvio ----------------
 timeline.push(schermataDatiPartecipante());
 timeline.push(schermataTesto(
-  "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Il test ha tre parti, ciascuna con 4 fasi. In ogni fase vedrai due categorie: una in alto a sinistra e una in alto a destra. Ad ogni parola, tocca <b>SINISTRA</b> se la parola appartiene alla categoria mostrata in alto a sinistra, <b>DESTRA</b> se appartiene a quella in alto a destra. Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
+  "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Prevede 3 topic, ciascuno con 4 fasi. In ogni fase vedrai due categorie: una in alto a sinistra e una in alto a destra. Ad ogni parola (attività o nomi), tocca <b>SINISTRA</b> se la parola appartiene alla categoria mostrata in alto a sinistra, <b>DESTRA</b> se appartiene a quella in alto a destra. Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
 ));
 var ordine = shuffle(argomenti);
 var stereoPrima = Math.random() < 0.5;
