@@ -274,9 +274,15 @@ function fineTest(){
     var a = document.createElement('a'); a.href=url; a.download = 'dati_iat_'+(extra.participant_id||'anonimo')+'.json'; a.click();
   }
 
-  // L'invio parte SUBITO, in background, mentre lo studente scorre le
-  // schermate di risultato: cosi' quando arriva all'ultima schermata
-  // l'esito (riuscito o no) è quasi sempre già noto.
+  // Il file JSON si scarica SEMPRE sul dispositivo dello studente, non solo
+  // se l'invio al foglio Google fallisce: serve alla docente come copia
+  // individuale da raccogliere (es. su Drive) per l'analisi di popolazione
+  // con lo script Python, indipendentemente dall'esito dell'invio al foglio.
+  scaricaBackup();
+
+  // L'invio al foglio Google parte SUBITO, in background, mentre lo
+  // studente scorre le schermate di risultato: cosi' quando arriva
+  // all'ultima schermata l'esito (riuscito o no) è quasi sempre già noto.
   var statoInvio = APPS_SCRIPT_URL.indexOf('INCOLLA_QUI') !== -1 ? 'non-configurato' : 'in-corso';
   function aggiornaStatoSeSullUltimaSchermata(){
     // se l'esito dell'invio arriva mentre lo studente è già sull'ultima
@@ -284,15 +290,13 @@ function fineTest(){
     // la ridisegna cosi' mostra l'esito vero invece di "Invio in corso..."
     if (typeof mostraPagina === 'function' && schermoSuUltima) mostraPagina(pagine.length - 1);
   }
-  if (statoInvio === 'non-configurato') {
-    scaricaBackup();
-  } else {
+  if (statoInvio !== 'non-configurato') {
     fetch(APPS_SCRIPT_URL, {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: pacchetto
     }).then(function(){ statoInvio = 'ok'; aggiornaStatoSeSullUltimaSchermata(); })
-      .catch(function(){ statoInvio = 'fallito'; scaricaBackup(); aggiornaStatoSeSullUltimaSchermata(); });
+      .catch(function(){ statoInvio = 'fallito'; aggiornaStatoSeSullUltimaSchermata(); });
   }
 
   // ------------------------------------------------------------------
