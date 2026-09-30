@@ -63,14 +63,15 @@ var argomenti = [
     attrB:['Guida con sicurezza','Parcheggia bene','Frena in tempo','Effettua un sorpasso in sicurezza','Rispetta il codice della strada'] },
   { id:'corpo', titolo:'CORPO', etichettaA:'Cura elaborata', etichettaB:'Cura essenziale',
     attrA:['Fa la manicure regolarmente','Fa la skincare','Fa la depilazione','Si pesa regolarmente',"Ha l'armadio pieno di vestiti","Manifesta una preoccupazione eccessiva per l'aumento di peso"],
-    attrB:['Usa solo sapone ed acqua','Si pettina e basta','Si veste senza pensarci','Non si preoccupa di mettere troppo peso','Usa solo lo shampoo per lavarsi i capelli','Possiede pochi capi'] },
+    attrB:['Usa solo sapone ed acqua','Si pettina e basta','Si veste senza pensarci','Favorisce aumento di massa corporale','Pulizia unghie corte','Possiede pochi capi'] },
   { id:'domestico', titolo:'RUOLI DOMESTICI', etichettaA:'Mansioni per la cura e pulizia', etichettaB:'Mansioni per la manutenzione tecnica',
-    attrA:['Stira i capi di casa','Lava i piatti',"Passa l'aspirapolvere",'Rifà i letti','Porta i figli dal dottore','Assiste un famigliare malato'],
-    attrB:['Ripara il rubinetto','Aggiusta la presa elettrica','Cambia la lampadina','Controlla una perdita',"Taglia l'erba del giardino",'Usa il trapano'] }
+    attrA:['Stira i capi di casa','Lava i piatti',"Passare l'aspirapolvere",'Rifà i letti','Portare i figli dal dottore','Assistere un famigliare malato'],
+    attrB:['Ripara il rubinetto','Aggiusta la presa elettrica','Cambia la lampadina','Controlla una perdita',"Tagliare l'erba del giardino",'Usare il trapano'] }
 ];
 
 function shuffle(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 
+// ---------------- motore a fasi (sostituisce jsPsych) ----------------
 var trials = [];          // dati raccolti, uno per trial
 var extra = {};           // id/età/sesso/regione/ordine..., uniti a ogni trial
 var timeline = [];
@@ -94,25 +95,38 @@ function schermataTesto(html){
   };
 }
 
-// modulo iniziale id/età/sesso/regione
+var PAESI = ["Italia","Francia","Germania","Spagna","Svizzera","Romania","Albania","Regno Unito","Altro paese europeo","Paese extraeuropeo"];
+
+// modulo iniziale id/età/sesso/paese/regione
 function schermataDatiPartecipante(){
   return function(){
-    var opz = REGIONI.map(r => "<option value='"+r+"'>"+r+"</option>").join("");
+    var opzRegioni = REGIONI.map(r => "<option value='"+r+"'>"+r+"</option>").join("");
+    var opzPaesi = PAESI.map(p => "<option value='"+p+"'>"+p+"</option>").join("");
     schermo.innerHTML =
       "<h2>Prima di iniziare</h2><p style='color:#555;font-size:14px;text-align:center;'>Questi dati servono solo per l'analisi statistica in forma aggregata.</p>"+
       "<label>Codice identificativo</label><input id='c-id' type='text'>"+
       "<label>Età</label><input id='c-eta' type='number' min='16' max='99'>"+
       "<label>Sesso</label><select id='c-sesso'><option value=''>-- seleziona --</option><option>Femmina</option><option>Maschio</option><option>Preferisco non specificare</option></select>"+
-      "<label>Regione di residenza</label><select id='c-regione'><option value=''>-- seleziona --</option>"+opz+"</select>"+
+      "<label>Paese di residenza</label><select id='c-paese'><option value=''>-- seleziona --</option>"+opzPaesi+"</select>"+
+      "<div id='blocco-regione'><label>Regione di residenza</label><select id='c-regione'><option value=''>-- seleziona --</option>"+opzRegioni+"</select></div>"+
       "<div id='errore-form'></div><button id='campo-conferma'>Continua</button>";
+
+    var bloccoRegione = document.getElementById('blocco-regione');
+    document.getElementById('c-paese').onchange = function(){
+      var mostraRegione = this.value === 'Italia';
+      bloccoRegione.style.display = mostraRegione ? '' : 'none';
+      if (!mostraRegione) document.getElementById('c-regione').value = '';
+    };
+
     document.getElementById('campo-conferma').onclick = function(){
       var id = document.getElementById('c-id').value.trim();
       var eta = parseInt(document.getElementById('c-eta').value, 10);
       var sesso = document.getElementById('c-sesso').value;
-      var regione = document.getElementById('c-regione').value;
-      if (!id || !eta || !sesso || !regione){ document.getElementById('errore-form').textContent = "Compila tutti i campi."; return; }
+      var paese = document.getElementById('c-paese').value;
+      var regione = paese === 'Italia' ? document.getElementById('c-regione').value : '';
+      if (!id || !eta || !sesso || !paese || (paese==='Italia' && !regione)){ document.getElementById('errore-form').textContent = "Compila tutti i campi."; return; }
       if (isNaN(eta) || eta<16 || eta>99){ document.getElementById('errore-form').textContent = "Età non valida."; return; }
-      extra = Object.assign(extra, {participant_id:id, eta:eta, sesso:sesso, regione:regione});
+      extra = Object.assign(extra, {participant_id:id, eta:eta, sesso:sesso, paese:paese, regione:regione});
       registra({trial_type:'dati-partecipante'});
     };
   };
@@ -192,8 +206,10 @@ function fineTest(){
     var varCampionaria = a.reduce((s,x)=>s+(x-m)*(x-m),0) / (a.length-1);
     return Math.sqrt(varCampionaria);
   }
-// dscore: qui serve solo per dare
-  // un riscontro immediato allo studente
+  // Stesso identico calcolo del D-score fatto nel notebook (Greenwald, Nosek
+  // & Banaji, 2003, variante con penalità di 600 ms): qui serve solo per dare
+  // un riscontro immediato allo studente, il valore ufficiale resta quello
+  // ricalcolato dalla docente sui dati salvati.
   function calcolaDScore(topicId){
     var t = trials.filter(tr=>tr.trial_type==='iat-touch' && tr.block==='combinato' && tr.topic===topicId && tr.rt<10000);
     var stereo = t.filter(tr=>tr.condizione==='stereotipica');
@@ -242,7 +258,7 @@ function fineTest(){
   var riepilogoHtml = "<h3>Test completato, grazie!</h3>"+
     "<p style='font-size:13px;color:#555;'>Ecco un riepilogo del tuo tempo di risposta medio nelle due combinazioni di ogni argomento, e il relativo punteggio D (l'indicatore standard usato in questo tipo di test).</p>"+
     "<table><tr><th>Argomento</th><th>Tempo medio combinazione 1</th><th>Tempo medio combinazione 2</th><th>Punteggio D</th><th>Cosa significa</th></tr>"+righe+"</table>"+
-    "<p style='font-size:12px;color:#7f8c8d;margin-top:10px;'>Il punteggio D varia in teoria da <b>-2</b> a <b>+2</b> : un valore <b>vicino allo zero</b> significa che non è emersa nessuna associazione implicita rilevante; più il valore si allontana dallo zero (positivo o negativo), più forte è l'associazione in quella direzione. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo specifico test.</p>";
+    "<p style='font-size:12px;color:#7f8c8d;margin-top:10px;'>Il punteggio D varia in teoria da <b>-2</b> a <b>+2</b> (in pratica quasi sempre tra -1 e +1): un valore <b>vicino allo zero</b> significa che non è emersa nessuna associazione implicita rilevante; più il valore si allontana dallo zero (positivo o negativo), più forte è l'associazione in quella direzione. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo specifico test.</p>";
 
   var pacchetto = JSON.stringify(trials);
 
