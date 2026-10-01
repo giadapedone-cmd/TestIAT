@@ -271,7 +271,13 @@ function fineTest(){
   function scaricaBackup(){
     var blob = new Blob([pacchetto], {type:'application/json'});
     var url = URL.createObjectURL(blob);
-    var a = document.createElement('a'); a.href=url; a.download = 'dati_iat_'+(extra.participant_id||'anonimo')+'.json'; a.click();
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'dati_iat_'+(extra.participant_id||'anonimo')+'.json';
+    document.body.appendChild(a); // necessario su molti browser mobili: un click su un elemento non ancora nella pagina viene ignorato
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
   }
 
   // Il file JSON si scarica SEMPRE sul dispositivo dello studente, non solo
