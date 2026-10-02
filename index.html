@@ -198,7 +198,7 @@ function timelineArgomento(argomento, stereoPrima){
     argomento.attrA.forEach(w=>ts.push(trialIat(w,'attrA','left',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
     argomento.attrB.forEach(w=>ts.push(trialIat(w,'attrB','right',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
     var nota = numeroTest===3 ? "Le stesse attività e nomi di prima ora vanno smistate con le nuove categorie qui sopra."
-      : "Attenzione: sono le STESSE attività e nomi del test precedente, ma le categorie si sono scambiate di lato: il pulsante corretto per ogni parola è quindi opposto a prima.";
+      : "Attenzione: sono le STESSE attività e nomi del test precedente, ma le categorie si sono scambiate di lato: il pulsante corretto per ogni attività o nome è quindi opposto a prima.";
     fasi.push(schermataTesto("<h3>Test "+numeroTest+"</h3><p style='text-align:center;'>Categorie combinate:<br>"+sx.join(' o ')+" / "+dx.join(' o ')+"</p><p style='color:#7f8c8d;font-size:14px;text-align:center;'>"+nota+"</p>"));
     fasi = fasi.concat(shuffle(ts));
   }
@@ -331,7 +331,7 @@ function fineTest(){
   function testoStato(){
   //  if (statoInvio === 'ok') return "<p style='font-size:13px;color:#2e7d32;text-align:center;'>Dati inviati. Grazie!</p>";
    // if (statoInvio === 'fallito' || statoInvio === 'non-configurato') return "<p style='font-size:13px;color:#b45309;text-align:center;'>Invio al server non riuscito: una copia di riserva è stata scaricata sul telefono, invia il file alla docente.</p>";
-    return "<p style='font-size:13px;color:#7f8c8d;text-align:center;'>Invio in corso...</p>";
+  //  return "<p style='font-size:13px;color:#7f8c8d;text-align:center;'>Invio in corso...</p>";
   }
 
   var pagine = argomenti.map(paginaTempi).concat(argomenti.map(paginaDScore));
