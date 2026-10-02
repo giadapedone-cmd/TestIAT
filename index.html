@@ -56,7 +56,7 @@ var schermo = document.getElementById('schermo');
 var REGIONI = ["Abruzzo","Basilicata","Calabria","Campania","Emilia-Romagna","Friuli-Venezia Giulia","Lazio","Liguria","Lombardia","Marche","Molise","Piemonte","Puglia","Sardegna","Sicilia","Toscana","Trentino-Alto Adige","Umbria","Valle d'Aosta","Veneto"];
 
 var target_femminile = ['Giulia','Rossella','Asia','Giada','Rosa','Alessia'];
-var target_maschile = ['Andrea','Mario','Samuele','Gabriele','Filippo','Marco'];
+var target_maschile = ['Luca','Mario','Samuele','Gabriele','Filippo','Marco'];
 
 var argomenti = [
   { id:'motori', titolo:'MOTORI', etichettaA:'Guida goffa', etichettaB:'Guida sicura',
@@ -64,9 +64,9 @@ var argomenti = [
     attrB:['Guida con sicurezza','Parcheggia bene','Frena in tempo','Effettua un sorpasso in sicurezza','Rispetta il codice della strada'] },
   { id:'corpo', titolo:'CORPO', etichettaA:'Cura elaborata', etichettaB:'Cura essenziale',
     attrA:['Fa la manicure regolarmente','Fa la skincare','Effettua la depilazione','Si pesa regolarmente',"Ha l'armadio pieno di vestiti","Manifesta una preoccupazione eccessiva per l'aumento di peso"],
-    attrB:['Usa solo sapone ed acqua','Si pettina e basta','Si veste senza pensarci','Non si preoccupa troppo di mettere peso','Usa solo lo shampoo per lavarsi i capelli','Possiede pochi capi'] },
+    attrB:['Usa solo sapone ed acqua','Si pettina e basta','Si veste senza pensarci','Non si preoccupa troppo di mettere peso','Usa solo lo shampoo per lavarsi i capelli','Non possiede molti capi'] },
   { id:'domestico', titolo:'RUOLI DOMESTICI', etichettaA:'Mansioni per la cura e pulizia', etichettaB:'Mansioni per la manutenzione tecnica',
-    attrA:['Stira i capi di casa','Lava i piatti',"Passa l'aspirapolvere",'Rifà i letti','Porta i figli dal dottore','Assiste un famigliare malato'],
+    attrA:['Stira i capi di casa','Lava i piatti',"Passa l'aspirapolvere",'Rifà i letti','Porta i/le figli/figlie dal7dalla pediatra','Assiste una persona di famiglia malata'],
     attrB:['Ripara il rubinetto','Aggiusta la presa elettrica','Cambia la lampadina','Controlla una perdita',"Taglia l'erba del giardino",'Usa il trapano'] }
 ];
 
@@ -106,7 +106,7 @@ function schermataDatiPartecipante(){
       "<h2>Prima di iniziare</h2><p style='color:#555;font-size:14px;text-align:center;'>Questi dati servono solo per l'analisi statistica in forma aggregata.</p>"+
       "<label>Codice identificativo</label><input id='c-id' type='text'>"+
       "<label>Età</label><input id='c-eta' type='number' min='16' max='99'>"+
-      "<label>Sesso</label><select id='c-sesso'><option value=''>-- seleziona --</option><option>Femmina</option><option>Maschio</option><option>Preferisco non specificare</option></select>"+
+      "<label>Genere</label><select id='c-sesso'><option value=''>-- seleziona --</option><option>Femmina</option><option>Maschio</option><option>Preferisco non specificare</option></select>"+
       "<label>Paese di residenza</label><select id='c-paese'><option value=''>-- seleziona --</option>"+opzPaesi+"</select>"+
       "<div id='blocco-regione'><label>Regione di residenza</label><select id='c-regione'><option value=''>-- seleziona --</option>"+opzRegioni+"</select></div>"+
       "<div id='errore-form'></div><button id='campo-conferma'>Continua</button>";
