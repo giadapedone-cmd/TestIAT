@@ -174,11 +174,11 @@ function timelineArgomento(argomento, stereoPrima){
   var fasi = [];
   fasi.push(schermataTesto("<h2>"+argomento.titolo+"</h2><p style='text-align:center;'>Tocca Continua per iniziare il primo test.</p>"));
 
-  var domandaTest1 = "Smista i NOMI in FEMMINILE (sinistra) o MASCHILE (destra).";
-  fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>FEMMINILE è in alto a sinistra, MASCHILE in alto a destra. Tocca SINISTRA o DESTRA a seconda del nome mostrato.</p>"));
+  var domandaTest1 = "Smista i NOMI in LEI (sinistra) o LUI (destra).";
+  fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>LEI è in alto a sinistra, LUI in alto a destra. Tocca SINISTRA o DESTRA a seconda del nome mostrato.</p>"));
   var t1 = [];
-  target_femminile.forEach(w=>t1.push(trialIat(w,'femminile','left',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null,1,domandaTest1)));
-  target_maschile.forEach(w=>t1.push(trialIat(w,'maschile','right',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null,1,domandaTest1)));
+  target_femminile.forEach(w=>t1.push(trialIat(w,'lei','left',['LEI'],['LUI'],'test1_target',argomento.id,null,1,domandaTest1)));
+  target_maschile.forEach(w=>t1.push(trialIat(w,'lei','right',['LEI'],['LUI'],'test1_target',argomento.id,null,1,domandaTest1)));
   fasi = fasi.concat(shuffle(t1));
 
   var domandaTest2 = "Smista le ATTIVITÀ in "+argomento.etichettaA.toUpperCase()+" (sinistra) o "+argomento.etichettaB.toUpperCase()+" (destra).";
@@ -189,16 +189,16 @@ function timelineArgomento(argomento, stereoPrima){
   fasi = fasi.concat(shuffle(t2));
 
   function blocco(femminileConA, numeroTest){
-    var ts=[], sx = femminileConA?['FEMMINILE',argomento.etichettaA]:['MASCHILE',argomento.etichettaA];
-    var dx = femminileConA?['MASCHILE',argomento.etichettaB]:['FEMMINILE',argomento.etichettaB];
+    var ts=[], sx = femminileConA?['LEI',argomento.etichettaA]:['LUI',argomento.etichettaA];
+    var dx = femminileConA?['LUI',argomento.etichettaB]:['LEI',argomento.etichettaB];
     var cond = femminileConA?'stereotipica':'controstereotipica';
     var domandaCombinata = "Smista NOMI e ATTIVITÀ tra "+sx.join(' + ')+" (sinistra) e "+dx.join(' + ')+" (destra).";
-    target_femminile.forEach(w=>ts.push(trialIat(w,'femminile',femminileConA?'left':'right',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
-    target_maschile.forEach(w=>ts.push(trialIat(w,'maschile',femminileConA?'right':'left',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
+    target_femminile.forEach(w=>ts.push(trialIat(w,'lei',femminileConA?'left':'right',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
+    target_maschile.forEach(w=>ts.push(trialIat(w,'lui',femminileConA?'right':'left',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
     argomento.attrA.forEach(w=>ts.push(trialIat(w,'attrA','left',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
     argomento.attrB.forEach(w=>ts.push(trialIat(w,'attrB','right',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
-    var nota = numeroTest===3 ? "Le stesse parole di prima ora vanno smistate con le nuove categorie qui sopra."
-      : "Attenzione: sono le STESSE parole del test precedente, ma le categorie si sono scambiate di lato: il pulsante giusto per ogni parola è quindi opposto a prima.";
+    var nota = numeroTest===3 ? "Le stesse attività e nomi di prima ora vanno smistate con le nuove categorie qui sopra."
+      : "Attenzione: sono le STESSE parole del test precedente, ma le categorie si sono scambiate di lato: il pulsante corretto per ogni parola è quindi opposto a prima.";
     fasi.push(schermataTesto("<h3>Test "+numeroTest+"</h3><p style='text-align:center;'>Categorie combinate:<br>"+sx.join(' o ')+" / "+dx.join(' o ')+"</p><p style='color:#7f8c8d;font-size:14px;text-align:center;'>"+nota+"</p>"));
     fasi = fasi.concat(shuffle(ts));
   }
@@ -315,8 +315,8 @@ function fineTest(){
     var s = sintesi(a.id);
     if (!s) return "<h3>"+a.titolo+"</h3><p style='text-align:center;color:#7f8c8d;'>Dati insufficienti per questo argomento.</p>";
     return "<h3>"+a.titolo+" — Tempi di risposta</h3>"+
-      "<p style='text-align:center;'>Tempo medio quando la tua risposta <b>confermava</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mS+" ms</span></p>"+
-      "<p style='text-align:center;'>Tempo medio quando la tua risposta <b>andava contro</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mC+" ms</span></p>";
+      "<p style='text-align:center;'>Tempo medio delle risposte che <b>confermano</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mS+" ms</span></p>"+
+      "<p style='text-align:center;'>Tempo medio delle risposte che <b>NON confermano</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mC+" ms</span></p>";
   }
   function paginaDScore(a){
     var d = dScorePerArgomento[a.id];
@@ -324,7 +324,7 @@ function fineTest(){
     return "<h3>"+a.titolo+" — Punteggio D</h3>"+
       "<p style='text-align:center;font-size:30px;font-weight:bold;'>"+dTesto+"</p>"+
       "<p style='text-align:center;'>"+frasePerD(d)+"</p>"+
-      "<p style='font-size:12px;color:#7f8c8d;text-align:center;margin-top:10px;'>Il punteggio D varia in teoria da <b>-2</b> a <b>+2</b>: vicino allo zero significa nessuna associazione implicita rilevante; più si allontana dallo zero (in positivo o in negativo), più forte è l'associazione in quella direzione. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo test.</p>";
+      "<p style='font-size:12px;color:#7f8c8d;text-align:center;margin-top:10px;'>Il punteggio D varia in teoria da <b>-2</b> a <b>+2</b>: vicino allo zero significa nessuna associazione implicita rilevante; più si allontana dallo zero (in positivo), più forte è l'associazione in direzione dello stereotipo; più si allontana dallo zero (in negativo), più forte è l'associazione in direzione contraria allo stereotipo. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo test.</p>";
   }
 
   var paginaFinaleExtra = ""; // aggiunta solo sull'ultima schermata
@@ -353,7 +353,7 @@ function fineTest(){
 // ---------------- avvio ----------------
 timeline.push(schermataDatiPartecipante());
 timeline.push(schermataTesto(
-  "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Prevede 3 topic, ciascuno con 4 fasi. In ogni fase vedrai due categorie: una in alto a sinistra e una in alto a destra. Ad ogni parola (attività o nomi), tocca <b>SINISTRA</b> se la parola appartiene alla categoria mostrata in alto a sinistra, <b>DESTRA</b> se appartiene a quella in alto a destra. Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
+  "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Prevede 3 argomenti, ciascuno con 4 test. In ogni test vedrai 2 categorie: una in alto a sinistra e una in alto a destra. Ad ogni parola (attività o nomi), tocca <b>SINISTRA</b> se la parola appartiene alla categoria mostrata in alto a sinistra, <b>DESTRA</b> se appartiene a quella in alto a destra. Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
 ));
 var ordine = shuffle(argomenti);
 var stereoPrima = Math.random() < 0.5;
