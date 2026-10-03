@@ -329,9 +329,9 @@ function fineTest(){
 
   var paginaFinaleExtra = ""; // aggiunta solo sull'ultima schermata
   function testoStato(){
-  //  if (statoInvio === 'ok') return "<p style='font-size:13px;color:#2e7d32;text-align:center;'>Dati inviati. Grazie!</p>";
-   // if (statoInvio === 'fallito' || statoInvio === 'non-configurato') return "<p style='font-size:13px;color:#b45309;text-align:center;'>Invio al server non riuscito: una copia di riserva è stata scaricata sul telefono, invia il file alla docente.</p>";
-  //  return "<p style='font-size:13px;color:#7f8c8d;text-align:center;'>Invio in corso...</p>";
+   if (statoInvio === 'ok') return "<p style='font-size:13px;color:#2e7d32;text-align:center;'>Dati inviati. Grazie!</p>";
+    if (statoInvio === 'fallito' || statoInvio === 'non-configurato') return "<p style='font-size:13px;color:#b45309;text-align:center;'>Invio al server non riuscito: una copia di riserva è stata scaricata sul telefono, invia il file alla docente.</p>";
+   return "<p style='font-size:13px;color:#7f8c8d;text-align:center;'>Invio in corso...</p>";
   }
 
   var pagine = argomenti.map(paginaTempi).concat(argomenti.map(paginaDScore));
