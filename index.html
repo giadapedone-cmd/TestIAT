@@ -42,6 +42,16 @@
 </head>
 <body>
 <div id="app"><div class="schermo" id="schermo"><p style="text-align:center;">Caricamento...</p></div></div>
+
+<!-- Invio dati verso Apps Script tramite form nascosto + iframe invisibile:
+     a differenza di fetch()/XMLHttpRequest, una submission di form HTML
+     verso un altro dominio funziona in modo affidabile anche con i
+     redirect che Apps Script usa internamente, senza richiedere nessuna
+     intestazione CORS sulla risposta (che Apps Script spesso non manda). -->
+<iframe name="iframe-invio-nascosto" style="display:none;"></iframe>
+<form id="form-invio-dati" method="POST" target="iframe-invio-nascosto" style="display:none;">
+  <input type="hidden" name="payload" id="campo-payload">
+</form>
 <div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#ccc;z-index:9999;">versione pagina: v2-risultati-separati</div>
 
 <script>
@@ -56,17 +66,17 @@ var schermo = document.getElementById('schermo');
 var REGIONI = ["Abruzzo","Basilicata","Calabria","Campania","Emilia-Romagna","Friuli-Venezia Giulia","Lazio","Liguria","Lombardia","Marche","Molise","Piemonte","Puglia","Sardegna","Sicilia","Toscana","Trentino-Alto Adige","Umbria","Valle d'Aosta","Veneto"];
 
 var target_femminile = ['Giulia','Rossella','Asia','Giada','Rosa','Alessia'];
-var target_maschile = ['Luca','Mario','Samuele','Gabriele','Filippo','Marco'];
+var target_maschile = ['Andrea','Mario','Samuele','Gabriele','Filippo','Marco'];
 
 var argomenti = [
   { id:'motori', titolo:'MOTORI', etichettaA:'Guida goffa', etichettaB:'Guida sicura',
     attrA:['Graffia la fiancata','Sbaglia strada','Frena in ritardo','Effettua un sorpasso pericoloso','Viola il codice della strada'],
     attrB:['Guida con sicurezza','Parcheggia bene','Frena in tempo','Effettua un sorpasso in sicurezza','Rispetta il codice della strada'] },
   { id:'corpo', titolo:'CORPO', etichettaA:'Cura elaborata', etichettaB:'Cura essenziale',
-    attrA:['Fa la manicure regolarmente','Fa la skincare','Effettua la depilazione','Si pesa regolarmente',"Ha l'armadio pieno di vestiti","Manifesta una preoccupazione eccessiva per l'aumento di peso"],
-    attrB:['Usa solo sapone ed acqua','Si pettina e basta','Si veste senza pensarci','Non si preoccupa troppo di mettere peso','Usa solo lo shampoo per lavarsi i capelli','Non possiede molti capi'] },
+    attrA:['Fa la manicure regolarmente','Fa la skincare','Fa la depilazione','Si pesa regolarmente',"Ha l'armadio pieno di vestiti","Manifesta una preoccupazione eccessiva per l'aumento di peso"],
+    attrB:['Usa solo sapone ed acqua','Si pettina e basta','Si veste senza pensarci','Non si preoccupa troppo di mettere peso','Usa solo lo shampoo per lavarsi i capelli','Possiede pochi capi'] },
   { id:'domestico', titolo:'RUOLI DOMESTICI', etichettaA:'Mansioni per la cura e pulizia', etichettaB:'Mansioni per la manutenzione tecnica',
-    attrA:['Stira i capi di casa','Lava i piatti',"Passa l'aspirapolvere",'Rifà i letti','Porta i/le figli/figlie dal pediatra','Assiste una persona di famiglia malata'],
+    attrA:['Stira i capi di casa','Lava i piatti',"Passa l'aspirapolvere",'Rifà i letti','Porta i figli dal dottore','Assiste un famigliare malato'],
     attrB:['Ripara il rubinetto','Aggiusta la presa elettrica','Cambia la lampadina','Controlla una perdita',"Taglia l'erba del giardino",'Usa il trapano'] }
 ];
 
@@ -106,7 +116,7 @@ function schermataDatiPartecipante(){
       "<h2>Prima di iniziare</h2><p style='color:#555;font-size:14px;text-align:center;'>Questi dati servono solo per l'analisi statistica in forma aggregata.</p>"+
       "<label>Codice identificativo</label><input id='c-id' type='text'>"+
       "<label>Età</label><input id='c-eta' type='number' min='16' max='99'>"+
-      "<label>Genere</label><select id='c-sesso'><option value=''>-- seleziona --</option><option>Femmina</option><option>Maschio</option><option>Preferisco non specificare</option></select>"+
+      "<label>Sesso</label><select id='c-sesso'><option value=''>-- seleziona --</option><option>Femmina</option><option>Maschio</option><option>Preferisco non specificare</option></select>"+
       "<label>Paese di residenza</label><select id='c-paese'><option value=''>-- seleziona --</option>"+opzPaesi+"</select>"+
       "<div id='blocco-regione'><label>Regione di residenza</label><select id='c-regione'><option value=''>-- seleziona --</option>"+opzRegioni+"</select></div>"+
       "<div id='errore-form'></div><button id='campo-conferma'>Continua</button>";
@@ -174,11 +184,11 @@ function timelineArgomento(argomento, stereoPrima){
   var fasi = [];
   fasi.push(schermataTesto("<h2>"+argomento.titolo+"</h2><p style='text-align:center;'>Tocca Continua per iniziare il primo test.</p>"));
 
-  var domandaTest1 = "Smista i NOMI in LEI (sinistra) o LUI (destra).";
-  fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>LEI è in alto a sinistra, LUI in alto a destra. Tocca SINISTRA o DESTRA a seconda del nome mostrato.</p>"));
+  var domandaTest1 = "Smista i NOMI in FEMMINILE (sinistra) o MASCHILE (destra).";
+  fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>FEMMINILE è in alto a sinistra, MASCHILE in alto a destra. Tocca SINISTRA o DESTRA a seconda del nome mostrato.</p>"));
   var t1 = [];
-  target_femminile.forEach(w=>t1.push(trialIat(w,'lei','left',['LEI'],['LUI'],'test1_target',argomento.id,null,1,domandaTest1)));
-  target_maschile.forEach(w=>t1.push(trialIat(w,'lei','right',['LEI'],['LUI'],'test1_target',argomento.id,null,1,domandaTest1)));
+  target_femminile.forEach(w=>t1.push(trialIat(w,'femminile','left',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null,1,domandaTest1)));
+  target_maschile.forEach(w=>t1.push(trialIat(w,'maschile','right',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null,1,domandaTest1)));
   fasi = fasi.concat(shuffle(t1));
 
   var domandaTest2 = "Smista le ATTIVITÀ in "+argomento.etichettaA.toUpperCase()+" (sinistra) o "+argomento.etichettaB.toUpperCase()+" (destra).";
@@ -189,16 +199,16 @@ function timelineArgomento(argomento, stereoPrima){
   fasi = fasi.concat(shuffle(t2));
 
   function blocco(femminileConA, numeroTest){
-    var ts=[], sx = femminileConA?['LEI',argomento.etichettaA]:['LUI',argomento.etichettaA];
-    var dx = femminileConA?['LUI',argomento.etichettaB]:['LEI',argomento.etichettaB];
+    var ts=[], sx = femminileConA?['FEMMINILE',argomento.etichettaA]:['MASCHILE',argomento.etichettaA];
+    var dx = femminileConA?['MASCHILE',argomento.etichettaB]:['FEMMINILE',argomento.etichettaB];
     var cond = femminileConA?'stereotipica':'controstereotipica';
     var domandaCombinata = "Smista NOMI e ATTIVITÀ tra "+sx.join(' + ')+" (sinistra) e "+dx.join(' + ')+" (destra).";
-    target_femminile.forEach(w=>ts.push(trialIat(w,'lei',femminileConA?'left':'right',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
-    target_maschile.forEach(w=>ts.push(trialIat(w,'lui',femminileConA?'right':'left',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
+    target_femminile.forEach(w=>ts.push(trialIat(w,'femminile',femminileConA?'left':'right',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
+    target_maschile.forEach(w=>ts.push(trialIat(w,'maschile',femminileConA?'right':'left',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
     argomento.attrA.forEach(w=>ts.push(trialIat(w,'attrA','left',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
     argomento.attrB.forEach(w=>ts.push(trialIat(w,'attrB','right',sx,dx,'combinato',argomento.id,cond,numeroTest,domandaCombinata)));
-    var nota = numeroTest===3 ? "Le stesse attività e nomi di prima ora vanno smistate con le nuove categorie qui sopra."
-      : "Attenzione: sono le STESSE attività e nomi del test precedente, ma le categorie si sono scambiate di lato: il pulsante corretto per ogni attività o nome è quindi opposto a prima.";
+    var nota = numeroTest===3 ? "Le stesse parole di prima ora vanno smistate con le nuove categorie qui sopra."
+      : "Attenzione: sono le STESSE parole del test precedente, ma le categorie si sono scambiate di lato: il pulsante giusto per ogni parola è quindi opposto a prima.";
     fasi.push(schermataTesto("<h3>Test "+numeroTest+"</h3><p style='text-align:center;'>Categorie combinate:<br>"+sx.join(' o ')+" / "+dx.join(' o ')+"</p><p style='color:#7f8c8d;font-size:14px;text-align:center;'>"+nota+"</p>"));
     fasi = fasi.concat(shuffle(ts));
   }
@@ -297,14 +307,28 @@ function fineTest(){
     if (typeof mostraPagina === 'function' && schermoSuUltima) mostraPagina(pagine.length - 1);
   }
   if (statoInvio !== 'non-configurato') {
-    fetch(APPS_SCRIPT_URL, {
-  method: 'POST',
-  mode: 'no-cors',
-  headers: { 'Content-Type': 'application/json' },
-  body: pacchetto
-})
-.then(function(){ statoInvio = 'ok'; aggiornaStatoSeSullUltimaSchermata(); })
-      .catch(function(){ statoInvio = 'fallito'; aggiornaStatoSeSullUltimaSchermata(); });
+    // Invio tramite form nascosto + iframe invisibile, invece di fetch():
+    // una submission di form verso un altro dominio funziona in modo pi\u00f9
+    // affidabile dei redirect che Apps Script usa internamente, senza
+    // bisogno di intestazioni CORS sulla risposta (che spesso mancano).
+    var formInvio = document.getElementById('form-invio-dati');
+    var iframeInvio = document.querySelector("iframe[name='iframe-invio-nascosto']");
+    document.getElementById('campo-payload').value = pacchetto;
+    formInvio.action = APPS_SCRIPT_URL;
+
+    iframeInvio.onload = function () {
+      if (statoInvio === 'ok') return; // l'iframe pu\u00f2 scaricare "load" pi\u00f9 di una volta
+      statoInvio = 'ok';
+      aggiornaStatoSeSullUltimaSchermata();
+    };
+    // di riserva: se l'iframe non dà mai segnale di "load" su qualche
+    // browser, dopo 4 secondi consideriamo comunque l'invio avvenuto
+    // (il form è stato comunque inviato, anche se non possiamo leggerne l'esito)
+    setTimeout(function () {
+      if (statoInvio === 'in-corso') { statoInvio = 'ok'; aggiornaStatoSeSullUltimaSchermata(); }
+    }, 4000);
+
+    formInvio.submit();
   }
 
   // ------------------------------------------------------------------
@@ -317,8 +341,8 @@ function fineTest(){
     var s = sintesi(a.id);
     if (!s) return "<h3>"+a.titolo+"</h3><p style='text-align:center;color:#7f8c8d;'>Dati insufficienti per questo argomento.</p>";
     return "<h3>"+a.titolo+" — Tempi di risposta</h3>"+
-      "<p style='text-align:center;'>Tempo medio delle risposte che <b>confermano</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mS+" ms</span></p>"+
-      "<p style='text-align:center;'>Tempo medio delle risposte che <b>NON confermano</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mC+" ms</span></p>";
+      "<p style='text-align:center;'>Tempo medio quando la tua risposta <b>confermava</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mS+" ms</span></p>"+
+      "<p style='text-align:center;'>Tempo medio quando la tua risposta <b>andava contro</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mC+" ms</span></p>";
   }
   function paginaDScore(a){
     var d = dScorePerArgomento[a.id];
@@ -326,14 +350,14 @@ function fineTest(){
     return "<h3>"+a.titolo+" — Punteggio D</h3>"+
       "<p style='text-align:center;font-size:30px;font-weight:bold;'>"+dTesto+"</p>"+
       "<p style='text-align:center;'>"+frasePerD(d)+"</p>"+
-      "<p style='font-size:12px;color:#7f8c8d;text-align:center;margin-top:10px;'>Il punteggio D varia in teoria da <b>-2</b> a <b>+2</b>: vicino allo zero significa nessuna associazione implicita rilevante; più si allontana dallo zero (in positivo), più forte è l'associazione in direzione dello stereotipo; più si allontana dallo zero (in negativo), più forte è l'associazione in direzione contraria allo stereotipo. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo test.</p>";
+      "<p style='font-size:12px;color:#7f8c8d;text-align:center;margin-top:10px;'>Il punteggio D varia in teoria da <b>-2</b> a <b>+2</b>: vicino allo zero significa nessuna associazione implicita rilevante; più si allontana dallo zero (in positivo o in negativo), più forte è l'associazione in quella direzione. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo test.</p>";
   }
 
   var paginaFinaleExtra = ""; // aggiunta solo sull'ultima schermata
   function testoStato(){
-   if (statoInvio === 'ok') return "<p style='font-size:13px;color:#2e7d32;text-align:center;'>Dati inviati. Grazie!</p>";
+    if (statoInvio === 'ok') return "<p style='font-size:13px;color:#2e7d32;text-align:center;'>Dati inviati. Grazie!</p>";
     if (statoInvio === 'fallito' || statoInvio === 'non-configurato') return "<p style='font-size:13px;color:#b45309;text-align:center;'>Invio al server non riuscito: una copia di riserva è stata scaricata sul telefono, invia il file alla docente.</p>";
-   return "<p style='font-size:13px;color:#7f8c8d;text-align:center;'>Invio in corso...</p>";
+    return "<p style='font-size:13px;color:#7f8c8d;text-align:center;'>Invio in corso...</p>";
   }
 
   var pagine = argomenti.map(paginaTempi).concat(argomenti.map(paginaDScore));
@@ -355,7 +379,7 @@ function fineTest(){
 // ---------------- avvio ----------------
 timeline.push(schermataDatiPartecipante());
 timeline.push(schermataTesto(
-  "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Prevede 3 argomenti, ciascuno con 4 test. In ogni test vedrai 2 categorie: una in alto a sinistra e una in alto a destra. Ad ogni parola (attività o nomi), tocca <b>SINISTRA</b> se la parola appartiene alla categoria mostrata in alto a sinistra, <b>DESTRA</b> se appartiene a quella in alto a destra. Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
+  "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Prevede 3 topic, ciascuno con 4 fasi. In ogni fase vedrai due categorie: una in alto a sinistra e una in alto a destra. Ad ogni parola (attività o nomi), tocca <b>SINISTRA</b> se la parola appartiene alla categoria mostrata in alto a sinistra, <b>DESTRA</b> se appartiene a quella in alto a destra. Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
 ));
 var ordine = shuffle(argomenti);
 var stereoPrima = Math.random() < 0.5;
