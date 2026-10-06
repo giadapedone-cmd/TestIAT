@@ -307,29 +307,42 @@ function fineTest(){
     if (typeof mostraPagina === 'function' && schermoSuUltima) mostraPagina(pagine.length - 1);
   }
   if (statoInvio !== 'non-configurato') {
-    // Invio tramite form nascosto + iframe invisibile, invece di fetch():
-    // una submission di form verso un altro dominio funziona in modo pi\u00f9
-    // affidabile dei redirect che Apps Script usa internamente, senza
-    // bisogno di intestazioni CORS sulla risposta (che spesso mancano).
+window.addEventListener('load', function() {
+
+  var statoInvio = APPS_SCRIPT_URL.indexOf('INCOLLA_QUI') !== -1 ? 'non-configurato' : 'in-corso';
+
+  function aggiornaStatoSeSullUltimaSchermata(){
+    if (typeof mostraPagina === 'function' && schermoSuUltima) {
+      mostraPagina(pagine.length - 1);
+    }
+  }
+
+  if (statoInvio !== 'non-configurato') {
+
     var formInvio = document.getElementById('form-invio-dati');
     var iframeInvio = document.querySelector("iframe[name='iframe-invio-nascosto']");
+
+    // ORA il DOM è pronto → il campo esiste davvero
     document.getElementById('campo-payload').value = pacchetto;
     formInvio.action = APPS_SCRIPT_URL;
 
     iframeInvio.onload = function () {
-      if (statoInvio === 'ok') return; // l'iframe pu\u00f2 scaricare "load" pi\u00f9 di una volta
+      if (statoInvio === 'ok') return;
       statoInvio = 'ok';
       aggiornaStatoSeSullUltimaSchermata();
     };
-    // di riserva: se l'iframe non dà mai segnale di "load" su qualche
-    // browser, dopo 4 secondi consideriamo comunque l'invio avvenuto
-    // (il form è stato comunque inviato, anche se non possiamo leggerne l'esito)
+
     setTimeout(function () {
-      if (statoInvio === 'in-corso') { statoInvio = 'ok'; aggiornaStatoSeSullUltimaSchermata(); }
+      if (statoInvio === 'in-corso') {
+        statoInvio = 'ok';
+        aggiornaStatoSeSullUltimaSchermata();
+      }
     }, 4000);
 
     formInvio.submit();
   }
+
+});
 
   // ------------------------------------------------------------------
   // 6 SCHERMATE DI RISULTATO IN SEQUENZA (richiesta della docente): una
