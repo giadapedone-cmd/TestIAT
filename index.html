@@ -306,9 +306,6 @@ function fineTest(){
     // la ridisegna cosi' mostra l'esito vero invece di "Invio in corso..."
     if (typeof mostraPagina === 'function' && schermoSuUltima) mostraPagina(pagine.length - 1);
   }
-  if (statoInvio !== 'non-configurato') {
-window.addEventListener('load', function() {
-
   var statoInvio = APPS_SCRIPT_URL.indexOf('INCOLLA_QUI') !== -1 ? 'non-configurato' : 'in-corso';
 
   function aggiornaStatoSeSullUltimaSchermata(){
