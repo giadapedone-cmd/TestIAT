@@ -299,7 +299,7 @@ function fineTest(){
   if (statoInvio !== 'non-configurato') {
     fetch(APPS_SCRIPT_URL, {
   method: 'POST',
-  mode: 'cors',
+  mode: 'no-cors',
   headers: { 'Content-Type': 'application/json' },
   body: pacchetto
 })
