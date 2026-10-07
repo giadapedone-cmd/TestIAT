@@ -339,8 +339,8 @@ function fineTest(){
     var s = sintesi(a.id);
     if (!s) return "<h3>"+a.titolo+"</h3><p style='text-align:center;color:#7f8c8d;'>Dati insufficienti per questo argomento.</p>";
     return "<h3>"+a.titolo+" — Tempi di risposta</h3>"+
-      "<p style='text-align:center;'>Tempo medio quando la tua risposta <b>confermava</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mS+" ms</span></p>"+
-      "<p style='text-align:center;'>Tempo medio quando la tua risposta <b>andava contro</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mC+" ms</span></p>";
+      "<p style='text-align:center;'>Tempo medio quando delle tue risposte che <b>confermano</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mS+" ms</span></p>"+
+      "<p style='text-align:center;'>Tempo medio quando delle tue risposta che <b>NON confermano</b> lo stereotipo:<br><span style='font-size:22px;'>"+s.mC+" ms</span></p>";
   }
   function paginaDScore(a){
     var d = dScorePerArgomento[a.id];
@@ -348,7 +348,7 @@ function fineTest(){
     return "<h3>"+a.titolo+" — Punteggio D</h3>"+
       "<p style='text-align:center;font-size:30px;font-weight:bold;'>"+dTesto+"</p>"+
       "<p style='text-align:center;'>"+frasePerD(d)+"</p>"+
-      "<p style='font-size:12px;color:#7f8c8d;text-align:center;margin-top:10px;'>Il punteggio D varia in teoria da <b>-2</b> a <b>+2</b>: vicino allo zero significa nessuna associazione implicita rilevante; più si allontana dallo zero (in positivo o in negativo), più forte è l'associazione in quella direzione. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo test.</p>";
+      "<p style='font-size:12px;color:#7f8c8d;text-align:center;margin-top:10px;'>Il punteggio può variare da <b>-2</b> a <b>+2</b>: se vicino allo zero significa nessuna associazione implicita rilevante; più si allontana dallo zero (in positivo), più forte è l'associazione in direzione dello stereotipo; se negativo c'è l'associazione in direzione contraria allo stereotipo. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo test.</p>";
   }
 
   function testoStato(){
