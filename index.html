@@ -52,11 +52,10 @@
 <form id="form-invio-dati" method="POST" target="iframe-invio-nascosto" style="display:none;">
   <input type="hidden" name="payload" id="campo-payload">
 </form>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#ccc;z-index:9999;">versione pagina: v2-risultati-separati</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#ccc;z-index:9999;">versione pagina: v3-payload-grandi</div>
 
 <script>
 // ============================================================
-// 
 // sostituisci qui sotto l'URL con quello del TUO Google Apps Script
 // (vedi istruzioni "come collegare Google Sheet" a parte).
 // ============================================================
@@ -154,8 +153,8 @@ function trialIat(parola, categoria, lato, etichettaSx, etichettaDx, blocco, top
       "<div class='barra-categorie'><span>"+[].concat(etichettaSx).join(' / ')+"</span><span>"+[].concat(etichettaDx).join(' / ')+"</span></div>"+
       "<div class='parola-centro'><h1>"+parola+"</h1></div>"+
       "<div class='pulsanti-risposta'>"+
-      "<button class='pulsante-lato' id='btn-sx'>◀ SINISTRA<br><span style='font-weight:normal;font-size:0.85em;'>"+"</span></button>"+
-      "<button class='pulsante-lato' id='btn-dx'>DESTRA ▶<br><span style='font-weight:normal;font-size:0.85em;'>"+"</span></button></div>";
+      "<button class='pulsante-lato' id='btn-sx'>◀ SINISTRA<br><span style='font-weight:normal;font-size:0.85em;'>"+[].concat(etichettaSx).join(' / ')+"</span></button>"+
+      "<button class='pulsante-lato' id='btn-dx'>DESTRA ▶<br><span style='font-weight:normal;font-size:0.85em;'>"+[].concat(etichettaDx).join(' / ')+"</span></button></div>";
 
     function tocco(latoScelto){
       var rt = performance.now() - inizio;
@@ -184,11 +183,11 @@ function timelineArgomento(argomento, stereoPrima){
   var fasi = [];
   fasi.push(schermataTesto("<h2>"+argomento.titolo+"</h2><p style='text-align:center;'>Tocca Continua per iniziare il primo test.</p>"));
 
-  var domandaTest1 = "Smista i NOMI in LEI (sinistra) o LUI (destra).";
-  fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>LEI è in alto a sinistra, LUI in alto a destra. Tocca SINISTRA o DESTRA a seconda del nome mostrato.</p>"));
+  var domandaTest1 = "Smista i NOMI in FEMMINILE (sinistra) o MASCHILE (destra).";
+  fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>FEMMINILE è in alto a sinistra, MASCHILE in alto a destra. Tocca SINISTRA o DESTRA a seconda del nome mostrato.</p>"));
   var t1 = [];
-  target_femminile.forEach(w=>t1.push(trialIat(w,'femminile','left',['LEI'],['LUI'],'test1_target',argomento.id,null,1,domandaTest1)));
-  target_maschile.forEach(w=>t1.push(trialIat(w,'maschile','right',['LEI'],['LUI'],'test1_target',argomento.id,null,1,domandaTest1)));
+  target_femminile.forEach(w=>t1.push(trialIat(w,'femminile','left',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null,1,domandaTest1)));
+  target_maschile.forEach(w=>t1.push(trialIat(w,'maschile','right',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null,1,domandaTest1)));
   fasi = fasi.concat(shuffle(t1));
 
   var domandaTest2 = "Smista le ATTIVITÀ in "+argomento.etichettaA.toUpperCase()+" (sinistra) o "+argomento.etichettaB.toUpperCase()+" (destra).";
@@ -306,34 +305,25 @@ function fineTest(){
     // la ridisegna cosi' mostra l'esito vero invece di "Invio in corso..."
     if (typeof mostraPagina === 'function' && schermoSuUltima) mostraPagina(pagine.length - 1);
   }
-  var statoInvio = APPS_SCRIPT_URL.indexOf('INCOLLA_QUI') !== -1 ? 'non-configurato' : 'in-corso';
-
-  function aggiornaStatoSeSullUltimaSchermata(){
-    if (typeof mostraPagina === 'function' && schermoSuUltima) {
-      mostraPagina(pagine.length - 1);
-    }
-  }
 
   if (statoInvio !== 'non-configurato') {
-
+    // Invio tramite form nascosto + iframe invisibile (vedi commento HTML):
+    // più affidabile di fetch()/XHR per i redirect interni di Apps Script.
     var formInvio = document.getElementById('form-invio-dati');
     var iframeInvio = document.querySelector("iframe[name='iframe-invio-nascosto']");
 
-    // ORA il DOM è pronto → il campo esiste davvero
     document.getElementById('campo-payload').value = pacchetto;
     formInvio.action = APPS_SCRIPT_URL;
 
     iframeInvio.onload = function () {
-      if (statoInvio === 'ok') return;
+      if (statoInvio === 'ok') return; // l'iframe può scatenare "load" più di una volta
       statoInvio = 'ok';
       aggiornaStatoSeSullUltimaSchermata();
     };
-
+    // di riserva: se l'iframe non dà mai segnale di "load" su qualche
+    // browser, dopo 4 secondi consideriamo comunque l'invio avvenuto
     setTimeout(function () {
-      if (statoInvio === 'in-corso') {
-        statoInvio = 'ok';
-        aggiornaStatoSeSullUltimaSchermata();
-      }
+      if (statoInvio === 'in-corso') { statoInvio = 'ok'; aggiornaStatoSeSullUltimaSchermata(); }
     }, 4000);
 
     formInvio.submit();
@@ -361,7 +351,6 @@ function fineTest(){
       "<p style='font-size:12px;color:#7f8c8d;text-align:center;margin-top:10px;'>Il punteggio D varia in teoria da <b>-2</b> a <b>+2</b>: vicino allo zero significa nessuna associazione implicita rilevante; più si allontana dallo zero (in positivo o in negativo), più forte è l'associazione in quella direzione. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo test.</p>";
   }
 
-  var paginaFinaleExtra = ""; // aggiunta solo sull'ultima schermata
   function testoStato(){
     if (statoInvio === 'ok') return "<p style='font-size:13px;color:#2e7d32;text-align:center;'>Dati inviati. Grazie!</p>";
     if (statoInvio === 'fallito' || statoInvio === 'non-configurato') return "<p style='font-size:13px;color:#b45309;text-align:center;'>Invio al server non riuscito: una copia di riserva è stata scaricata sul telefono, invia il file alla docente.</p>";
