@@ -153,8 +153,8 @@ function trialIat(parola, categoria, lato, etichettaSx, etichettaDx, blocco, top
       "<div class='barra-categorie'><span>"+[].concat(etichettaSx).join(' / ')+"</span><span>"+[].concat(etichettaDx).join(' / ')+"</span></div>"+
       "<div class='parola-centro'><h1>"+parola+"</h1></div>"+
       "<div class='pulsanti-risposta'>"+
-      "<button class='pulsante-lato' id='btn-sx'>◀ SINISTRA<br><span style='font-weight:normal;font-size:0.85em;'>"+[].concat(etichettaSx).join(' / ')+"</span></button>"+
-      "<button class='pulsante-lato' id='btn-dx'>DESTRA ▶<br><span style='font-weight:normal;font-size:0.85em;'>"+[].concat(etichettaDx).join(' / ')+"</span></button></div>";
+      "<button class='pulsante-lato' id='btn-sx'>◀ SINISTRA<br><span style='font-weight:normal;font-size:0.85em;'>"+"</span></button>"+
+      "<button class='pulsante-lato' id='btn-dx'>DESTRA ▶<br><span style='font-weight:normal;font-size:0.85em;'>"+"</span></button></div>";
 
     function tocco(latoScelto){
       var rt = performance.now() - inizio;
@@ -183,11 +183,11 @@ function timelineArgomento(argomento, stereoPrima){
   var fasi = [];
   fasi.push(schermataTesto("<h2>"+argomento.titolo+"</h2><p style='text-align:center;'>Tocca Continua per iniziare il primo test.</p>"));
 
-  var domandaTest1 = "Smista i NOMI in FEMMINILE (sinistra) o MASCHILE (destra).";
-  fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>FEMMINILE è in alto a sinistra, MASCHILE in alto a destra. Tocca SINISTRA o DESTRA a seconda del nome mostrato.</p>"));
+  var domandaTest1 = "Smista i NOMI in LEI (sinistra) o LUI (destra).";
+  fasi.push(schermataTesto("<h3>Test 1</h3><p style='text-align:center;'>LEI è in alto a sinistra, LUI in alto a destra. Tocca SINISTRA o DESTRA a seconda del nome mostrato.</p>"));
   var t1 = [];
-  target_femminile.forEach(w=>t1.push(trialIat(w,'femminile','left',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null,1,domandaTest1)));
-  target_maschile.forEach(w=>t1.push(trialIat(w,'maschile','right',['FEMMINILE'],['MASCHILE'],'test1_target',argomento.id,null,1,domandaTest1)));
+  target_femminile.forEach(w=>t1.push(trialIat(w,'femminile','left',['LEI'],['LUI'],'test1_target',argomento.id,null,1,domandaTest1)));
+  target_maschile.forEach(w=>t1.push(trialIat(w,'maschile','right',['LEI'],['LUI'],'test1_target',argomento.id,null,1,domandaTest1)));
   fasi = fasi.concat(shuffle(t1));
 
   var domandaTest2 = "Smista le ATTIVITÀ in "+argomento.etichettaA.toUpperCase()+" (sinistra) o "+argomento.etichettaB.toUpperCase()+" (destra).";
