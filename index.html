@@ -379,7 +379,7 @@ timeline.push(schermataTesto(
   "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Prevede 3 argomenti, ciascuno con 4 fasi. In ogni fase vedrai due categorie: una in alto a sinistra e una in alto a destra. Ad ogni parola (attività o nomi), tocca <b>SINISTRA</b> se la parola appartiene alla categoria mostrata in alto a sinistra, <b>DESTRA</b> se appartiene a quella in alto a destra. Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
 ));
 var ordine = shuffle(argomenti);
-var stereoPrima = Math.random() < 0.5;
+var stereoPrima = true;
 extra.ordine_argomenti = ordine.map(a=>a.id).join(' > ');
 extra.ordine_blocchi_combinati = stereoPrima ? 'stereotipica_prima' : 'controstereotipica_prima';
 ordine.forEach(a => { timeline = timeline.concat(timelineArgomento(a, stereoPrima)); });
