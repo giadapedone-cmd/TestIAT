@@ -398,10 +398,10 @@ function fineTest(){
 // ---------------- avvio ----------------
 timeline.push(schermataDatiPartecipante());
 timeline.push(schermataTesto(
-  "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Prevede 3 argomenti, ciascuno con 4 fasi. In ogni fase vedrai due categorie: una in alto a sinistra e una in alto a destra. Ad ogni parola (attività o nomi), tocca <b>SINISTRA</b> se la parola appartiene alla categoria mostrata in alto a sinistra, <b>DESTRA</b> se appartiene a quella in alto a destra. Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
+  "<h2>Test di associazione implicita</h2><p style='text-align:center;'Il test prevede 3 argomenti, ciascuno con 4 fasi.<br> In ogni fase ci saranno alcune domande a cui risponderai selezionando due pulsanti alternativi in basso.<br>Per ogni domanda, compariranno in alto due categorie alternative e al centro una parola.<br>La tua risposta consiste nell'associare la parola al centro a una delle categorie in alto tramite i pulsanti.<br>Tocca <b>SINISTRA</b> se la parola al centro appartiene alla categoria in alto a sinistra, <b>DESTRA</b> se appartiene a quella in alto a destra.<br> Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
 ));
 var ordine = shuffle(argomenti);
-var stereoPrima = true; // la docente vuole sempre la combinazione stereotipica (Test 3) prima, e quella controstereotipica (Test 4) dopo: niente più randomizzazione di questo ordine
+var stereoPrima = true; 
 extra.ordine_argomenti = ordine.map(a=>a.id).join(' > ');
 extra.ordine_blocchi_combinati = stereoPrima ? 'stereotipica_prima' : 'controstereotipica_prima';
 ordine.forEach(a => { timeline = timeline.concat(timelineArgomento(a, stereoPrima)); });
