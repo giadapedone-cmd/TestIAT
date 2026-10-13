@@ -251,39 +251,74 @@ function fineTest(){
   // un riscontro immediato allo studente, il valore ufficiale resta quello
   // ricalcolato dalla docente sui dati salvati.
   function calcolaDScore(topicId){
-    var t = trials.filter(tr=>tr.trial_type==='iat-touch' && tr.block==='combinato' && tr.topic===topicId && tr.rt<10000);
-    var stereo = t.filter(tr=>tr.condizione==='stereotipica');
-    var contro = t.filter(tr=>tr.condizione==='controstereotipica');
-    if (!stereo.length || !contro.length) return null;
+    // Due blocchi combinati del tema; esclusi RT non validi e > 10.000 ms.
+    // Il tempo registrato include l'eventuale correzione dell'errore.
+    var t = trials.filter(tr =>
+      tr.trial_type === 'iat-touch' &&
+      tr.block === 'combinato' &&
+      tr.topic === topicId &&
+      Number.isFinite(tr.rt) &&
+      tr.rt > 0 &&
+      tr.rt <= 10000 &&
+      (tr.condizione === 'stereotipica' ||
+       tr.condizione === 'controstereotipica')
+    );
 
-    var rtStereoValidi = stereo.filter(tr=>tr.rt>=300).map(tr=>tr.rt);
-    var rtControValidi = contro.filter(tr=>tr.rt>=300).map(tr=>tr.rt);
-    if (!rtStereoValidi.length || !rtControValidi.length) return null;
+    var stereo = t.filter(tr => tr.condizione === 'stereotipica');
+    var contro = t.filter(tr => tr.condizione === 'controstereotipica');
 
-    var erroreStereo = 1 - (stereo.filter(tr=>tr.correct).length / stereo.length);
-    var erroreContro = 1 - (contro.filter(tr=>tr.correct).length / contro.length);
+    if (stereo.length < 2 || contro.length < 2) return null;
 
-    var mediaStereo = media(rtStereoValidi) + 600*erroreStereo;
-    var mediaContro = media(rtControValidi) + 600*erroreContro;
-    var sd = deviazioneStandard(stereo.map(tr=>tr.rt).concat(contro.map(tr=>tr.rt)));
-    if (!sd) return null;
+    // Criterio di qualità: se >10% delle prove del tema è <300 ms,
+    // il punteggio per questo tema non viene calcolato.
+    // Le prove <300 ms non vengono eliminate singolarmente dalla media.
+    var veloci = t.filter(tr => tr.rt < 300).length;
+    if (veloci / t.length > 0.10) return null;
+
+    var rtStereo = stereo.map(tr => tr.rt);
+    var rtContro = contro.map(tr => tr.rt);
+    var tuttiRT = rtStereo.concat(rtContro);
+
+    var mediaStereo = media(rtStereo);
+    var mediaContro = media(rtContro);
+    var sd = deviazioneStandard(tuttiRT);
+
+    if (!Number.isFinite(sd) || sd <= 0) return null;
+
+    // Scelta per questo compito con correzione obbligatoria:
+    // si mantiene il tempo fino alla risposta corretta e non si aggiungono 600 ms.
+    // Confermare questa scelta con il relatore prima della raccolta principale.
     return (mediaContro - mediaStereo) / sd;
   }
 
   function sintesi(topicId){
-    var t = trials.filter(t=>t.trial_type==='iat-touch' && t.block==='combinato' && t.topic===topicId && t.rt<10000);
-    var s = t.filter(t=>t.condizione==='stereotipica').map(t=>t.rt);
-    var c = t.filter(t=>t.condizione==='controstereotipica').map(t=>t.rt);
+    // Stessi limiti superiori e controlli di validità usati nel D-score.
+    var t = trials.filter(tr =>
+      tr.trial_type === 'iat-touch' &&
+      tr.block === 'combinato' &&
+      tr.topic === topicId &&
+      Number.isFinite(tr.rt) &&
+      tr.rt > 0 &&
+      tr.rt <= 10000 &&
+      (tr.condizione === 'stereotipica' ||
+       tr.condizione === 'controstereotipica')
+    );
+    var s = t.filter(tr=>tr.condizione==='stereotipica').map(tr=>tr.rt);
+    var c = t.filter(tr=>tr.condizione==='controstereotipica').map(tr=>tr.rt);
     if(!s.length || !c.length) return null;
     return {mS:Math.round(media(s)), mC:Math.round(media(c))};
   }
 
   function frasePerD(d){
-    if (d === null) return "dati insufficienti per calcolare il punteggio";
-    var assoluto = Math.abs(d);
-    var intensita = assoluto < 0.15 ? "trascurabile" : assoluto < 0.35 ? "lieve" : assoluto < 0.65 ? "moderata" : "marcata";
-    if (assoluto < 0.15) return "punteggio vicino allo zero: nessuna associazione implicita rilevante";
-    return "associazione implicita " + intensita + ", " + (d > 0 ? "nella direzione stereotipica" : "nella direzione opposta allo stereotipo");
+    if (d === null || !Number.isFinite(d)) {
+      return "punteggio non calcolabile secondo i criteri di qualità previsti";
+    }
+    if (Math.abs(d) < 0.15) {
+      return "punteggio vicino allo zero; il risultato va interpretato con cautela e non dimostra l'assenza di associazioni implicite";
+    }
+    return d > 0
+      ? "tempi medi più brevi nella condizione stereotipica rispetto a quella controstereotipica"
+      : "tempi medi più brevi nella condizione controstereotipica rispetto a quella stereotipica";
   }
 
   // riga di riepilogo per partecipante (un D-score per argomento): la
@@ -372,7 +407,7 @@ function fineTest(){
     return "<h3>"+a.titolo+" — Punteggio D</h3>"+
       "<p style='text-align:center;font-size:30px;font-weight:bold;'>"+dTesto+"</p>"+
       "<p style='text-align:center;'>"+frasePerD(d)+"</p>"+
-      "<p style='font-size:12px;color:#7f8c8d;text-align:center;margin-top:10px;'>Il punteggio può variare da <b>-2</b> a <b>+2</b>: se vicino allo zero implica nessuna associazione implicita rilevante; più si allontana dallo zero (in positivo), più forte sarà l'associazione in direzione dello stereotipo; più si allontana dallo zero (in negativo), più forte sarà l'associazione in direzione contraria allo stereotipo. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo test.</p>";
+      "<p style='font-size:12px;color:#7f8c8d;text-align:center;margin-top:10px;'>Il punteggio è un indice standardizzato specifico di questo compito. Un valore positivo indica tempi medi più brevi nella condizione stereotipica; un valore negativo indica tempi medi più brevi nella condizione controstereotipica. Il punteggio non ha un intervallo fisso da -2 a +2 e non costituisce, da solo, una prova definitiva di un'associazione implicita.</p>";
   }
 
   function testoStato(){
@@ -400,7 +435,7 @@ function fineTest(){
 // ---------------- avvio ----------------
 timeline.push(schermataDatiPartecipante());
 timeline.push(schermataTesto(
-  "<h2>Test di associazione implicita</h2><p style='text-align:center;'Il test prevede 3 argomenti, ciascuno con 4 fasi.<br> In ogni fase ci saranno alcune domande a cui risponderai selezionando due pulsanti alternativi in basso.<br>Per ogni domanda, compariranno in alto due categorie alternative e al centro una parola.<br>La tua risposta consiste nell'associare la parola al centro a una delle categorie in alto tramite i pulsanti.<br>Tocca <b>SINISTRA</b> se la parola al centro appartiene alla categoria in alto a sinistra, <b>DESTRA</b> se appartiene a quella in alto a destra.<br> Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
+  "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Il test prevede 3 argomenti, ciascuno con 4 fasi.<br>In ogni fase ci saranno alcune domande a cui risponderai selezionando uno dei due pulsanti in basso.<br>Per ogni domanda, compariranno in alto due categorie alternative e al centro una parola.<br>La tua risposta consiste nell'associare la parola al centro a una delle categorie in alto tramite i pulsanti.<br>Tocca <b>SINISTRA</b> se la parola appartiene alla categoria a sinistra e <b>DESTRA</b> se appartiene alla categoria a destra.<br>Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
 ));
 var ordine = shuffle(argomenti);
 var stereoPrima = true; 
