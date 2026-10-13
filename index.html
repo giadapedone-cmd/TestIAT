@@ -136,6 +136,7 @@ function schermataDatiPartecipante(){
     schermo.innerHTML =
       "<h2>Prima di iniziare</h2><p style='color:#555;font-size:14px;text-align:center;'>Questi dati servono solo per l'analisi statistica in forma aggregata.</p>"+
       "<label>Codice identificativo</label><input id='c-id' type='text'>"+
+      "<label>Dipositivo utilizzato per eseguire il test</label><input id='c-disp' type='text'>"+
       "<label>Età</label><input id='c-eta' type='number' min='16' max='99'>"+
       "<label>Genere</label><select id='c-sesso'><option value=''>-- seleziona --</option><option>Femmina</option><option>Maschio</option><option>Preferisco non specificare</option></select>"+
       "<label>Paese di residenza</label><select id='c-paese'><option value=''>-- seleziona --</option>"+opzPaesi+"</select>"+
@@ -151,13 +152,14 @@ function schermataDatiPartecipante(){
 
     document.getElementById('campo-conferma').onclick = function(){
       var id = document.getElementById('c-id').value.trim();
+      var dispositivo= document.getElementById('c-disp').value.trim();
       var eta = parseInt(document.getElementById('c-eta').value, 10);
       var sesso = document.getElementById('c-sesso').value;
       var paese = document.getElementById('c-paese').value;
       var regione = paese === 'Italia' ? document.getElementById('c-regione').value : '';
-      if (!id || !eta || !sesso || !paese || (paese==='Italia' && !regione)){ document.getElementById('errore-form').textContent = "Compila tutti i campi."; return; }
+      if (!id || !dispositivo || !eta || !sesso || !paese || (paese==='Italia' && !regione)){ document.getElementById('errore-form').textContent = "Compila tutti i campi."; return; }
       if (isNaN(eta) || eta<16 || eta>99){ document.getElementById('errore-form').textContent = "Età non valida."; return; }
-      extra = Object.assign(extra, {participant_id:id, eta:eta, sesso:sesso, paese:paese, regione:regione});
+      extra = Object.assign(extra, {participant_id:id, dispositivo:dispositivo, eta:eta, sesso:sesso, paese:paese, regione:regione});
       registra({trial_type:'dati-partecipante'});
     };
   };
