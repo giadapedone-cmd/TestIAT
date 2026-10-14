@@ -66,7 +66,7 @@
 <form id="form-invio-dati" method="POST" target="iframe-invio-nascosto" style="display:none;">
   <input type="hidden" name="payload" id="campo-payload">
 </form>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#ccc;z-index:9999;">versione pagina: v4-device-ordine-fisso</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#ccc;z-index:9999;">versione pagina: v5-dscore-penalita600</div>
 
 <script>
 // ============================================================
@@ -98,13 +98,16 @@ function shuffle(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math
 // Rileva se il test viene fatto da cellulare o da pc/tablet, in automatico
 // (lo studente non deve indicarlo lui): usiamo lo user agent del browser,
 // lo stesso metodo che usano la maggior parte dei siti per questo scopo.
+// Il valore rilevato viene salvato nel campo "dispositivo_rilevato",
+// separato da "dispositivo" (quello dichiarato dallo studente nel modulo),
+// cosi' i due dati non si sovrascrivono e si possono confrontare.
 function rilevaDispositivo(){
   var mobile = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(navigator.userAgent);
   return mobile ? 'cellulare' : 'pc';
 }
 
 var trials = [];          // dati raccolti, uno per trial
-var extra = { dispositivo: rilevaDispositivo() };  // id/età/sesso/regione/dispositivo/ordine..., uniti a ogni trial
+var extra = { dispositivo_rilevato: rilevaDispositivo() };  // id/età/sesso/regione/dispositivo/ordine..., uniti a ogni trial
 var timeline = [];
 var indice = -1;
 
@@ -128,7 +131,7 @@ function schermataTesto(html){
 
 var PAESI = ["Italia","Francia","Germania","Spagna","Svizzera","Romania","Albania","Regno Unito","Altro paese europeo","Paese extraeuropeo"];
 
-// modulo iniziale id/età/sesso/paese/regione
+// modulo iniziale id/dispositivo/età/sesso/paese/regione
 function schermataDatiPartecipante(){
   return function(){
     var opzRegioni = REGIONI.map(r => "<option value='"+r+"'>"+r+"</option>").join("");
@@ -136,7 +139,7 @@ function schermataDatiPartecipante(){
     schermo.innerHTML =
       "<h2>Prima di iniziare</h2><p style='color:#555;font-size:14px;text-align:center;'>Questi dati servono solo per l'analisi statistica in forma aggregata.</p>"+
       "<label>Codice identificativo</label><input id='c-id' type='text'>"+
-      "<label>Dipositivo utilizzato per eseguire il test</label><input select id='c-disp'><option value=''>-- seleziona --</option><option>Cellulare</option><option>Computer</option><option>Tablet</option></select>"+
+      "<label>Dispositivo utilizzato per eseguire il test</label><select id='c-disp'><option value=''>-- seleziona --</option><option>Cellulare</option><option>Computer</option><option>Tablet</option></select>"+
       "<label>Età</label><input id='c-eta' type='number' min='16' max='99'>"+
       "<label>Genere</label><select id='c-sesso'><option value=''>-- seleziona --</option><option>Femmina</option><option>Maschio</option><option>Preferisco non specificare</option></select>"+
       "<label>Paese di residenza</label><select id='c-paese'><option value=''>-- seleziona --</option>"+opzPaesi+"</select>"+
@@ -152,7 +155,7 @@ function schermataDatiPartecipante(){
 
     document.getElementById('campo-conferma').onclick = function(){
       var id = document.getElementById('c-id').value.trim();
-      var dispositivo= document.getElementById('c-disp').value.trim();
+      var dispositivo = document.getElementById('c-disp').value;
       var eta = parseInt(document.getElementById('c-eta').value, 10);
       var sesso = document.getElementById('c-sesso').value;
       var paese = document.getElementById('c-paese').value;
@@ -247,13 +250,29 @@ function fineTest(){
     var varCampionaria = a.reduce((s,x)=>s+(x-m)*(x-m),0) / (a.length-1);
     return Math.sqrt(varCampionaria);
   }
-  // Stesso identico calcolo del D-score qui serve solo per dare
-  // un riscontro immediato allo studente, il valore ufficiale resta quello
-  // ricalcolato dalla docente sui dati salvati.
-  function calcolaDScore(topicId){
-    // Due blocchi combinati del tema; esclusi RT non validi e > 10.000 ms.
-    // Il tempo registrato include l'eventuale correzione dell'errore.
-    var t = trials.filter(tr =>
+
+  // ------------------------------------------------------------------
+  // SCORING (algoritmo di Greenwald, Nosek e Banaji, 2003, con penalità
+  // di 600 ms), adattato a 4 fasi: ogni condizione (stereotipica /
+  // controstereotipica) ha un solo blocco combinato per tema, quindi non
+  // esiste la distinzione pratica/test e vale la formula semplice:
+  //     D = (media_controstereotipica - media_stereotipica) / SD_combinata
+  // Valore positivo = risposte più rapide nella condizione stereotipica.
+  // Passi:
+  //  1. si eliminano le prove con RT > 10.000 ms;
+  //  2. si escludono i partecipanti con più del 10% di RT < 300 ms;
+  //  3. la SD (campionaria, n-1) si calcola sui tempi delle due condizioni
+  //     riuniti, PRIMA della sostituzione degli errori;
+  //  4. ogni prova con errore viene sostituita con la media delle risposte
+  //     corrette del suo blocco + 600 ms;
+  //  5. si ricalcolano le medie dei due blocchi e si applica la formula.
+  // Il punteggio mostrato allo studente è solo un riscontro immediato;
+  // il valore ufficiale resta quello ricalcolato sui dati salvati.
+  // ------------------------------------------------------------------
+
+  // prove valide (passo 1) dei blocchi combinati di un tema
+  function proveValide(topicId){
+    return trials.filter(tr =>
       tr.trial_type === 'iat-touch' &&
       tr.block === 'combinato' &&
       tr.topic === topicId &&
@@ -263,49 +282,53 @@ function fineTest(){
       (tr.condizione === 'stereotipica' ||
        tr.condizione === 'controstereotipica')
     );
-
-    var stereo = t.filter(tr => tr.condizione === 'stereotipica');
-    var contro = t.filter(tr => tr.condizione === 'controstereotipica');
-
-    if (stereo.length < 2 || contro.length < 2) return null;
-
-    // Criterio di qualità: se >10% delle prove del tema è <300 ms,
-    // il punteggio per questo tema non viene calcolato.
-    // Le prove <300 ms non vengono eliminate singolarmente dalla media.
-    var veloci = t.filter(tr => tr.rt < 300).length;
-    if (veloci / t.length > 0.10) return null;
-
-    var rtStereo = stereo.map(tr => tr.rt);
-    var rtContro = contro.map(tr => tr.rt);
-    var tuttiRT = rtStereo.concat(rtContro);
-
-    var mediaStereo = media(rtStereo);
-    var mediaContro = media(rtContro);
-    var sd = deviazioneStandard(tuttiRT);
-
-    if (!Number.isFinite(sd) || sd <= 0) return null;
-
-    // Scelta per questo compito con correzione obbligatoria:
-    // si mantiene il tempo fino alla risposta corretta e non si aggiungono 600 ms.
-    // Confermare questa scelta con il relatore prima della raccolta principale.
-    return (mediaContro - mediaStereo) / sd;
   }
 
+  // Passo 2: criterio di esclusione a livello di PARTECIPANTE, calcolato
+  // su tutte le prove valide dei blocchi combinati di tutti i temi.
+  var proveCombinateTutte = [];
+  argomenti.forEach(a => { proveCombinateTutte = proveCombinateTutte.concat(proveValide(a.id)); });
+  var partecipanteEscluso = proveCombinateTutte.length > 0 &&
+    proveCombinateTutte.filter(tr => tr.rt < 300).length / proveCombinateTutte.length > 0.10;
+
+  // Passo 4: sostituzione degli errori con media dei corretti del blocco + 600 ms.
+  // Restituisce la lista dei tempi del blocco dopo la sostituzione
+  // (null se nel blocco non c'è nessuna risposta corretta al primo tentativo).
+  function tempiConPenalita(blocco){
+    var corretti = blocco.filter(tr => tr.numero_errori === 0).map(tr => tr.rt);
+    if (!corretti.length) return null;
+    var sostituto = media(corretti) + 600;
+    return blocco.map(tr => tr.numero_errori > 0 ? sostituto : tr.rt);
+  }
+
+  function calcolaDScore(topicId){
+    if (partecipanteEscluso) return null;
+
+    var t = proveValide(topicId);
+    var stereo = t.filter(tr => tr.condizione === 'stereotipica');
+    var contro = t.filter(tr => tr.condizione === 'controstereotipica');
+    if (stereo.length < 2 || contro.length < 2) return null;
+
+    // Passo 3: SD sui tempi riuniti, prima della sostituzione degli errori
+    var tuttiRT = stereo.concat(contro).map(tr => tr.rt);
+    var sd = deviazioneStandard(tuttiRT);
+    if (!Number.isFinite(sd) || sd <= 0) return null;
+
+    // Passi 4-5
+    var rtStereo = tempiConPenalita(stereo);
+    var rtContro = tempiConPenalita(contro);
+    if (!rtStereo || !rtContro) return null;
+
+    return (media(rtContro) - media(rtStereo)) / sd;
+  }
+
+  // tempi medi mostrati nelle schermate dei risultati: sono le stesse
+  // medie (con sostituzione degli errori) che entrano nel calcolo di D
   function sintesi(topicId){
-    // Stessi limiti superiori e controlli di validità usati nel D-score.
-    var t = trials.filter(tr =>
-      tr.trial_type === 'iat-touch' &&
-      tr.block === 'combinato' &&
-      tr.topic === topicId &&
-      Number.isFinite(tr.rt) &&
-      tr.rt > 0 &&
-      tr.rt <= 10000 &&
-      (tr.condizione === 'stereotipica' ||
-       tr.condizione === 'controstereotipica')
-    );
-    var s = t.filter(tr=>tr.condizione==='stereotipica').map(tr=>tr.rt);
-    var c = t.filter(tr=>tr.condizione==='controstereotipica').map(tr=>tr.rt);
-    if(!s.length || !c.length) return null;
+    var t = proveValide(topicId);
+    var s = tempiConPenalita(t.filter(tr=>tr.condizione==='stereotipica'));
+    var c = tempiConPenalita(t.filter(tr=>tr.condizione==='controstereotipica'));
+    if(!s || !c) return null;
     return {mS:Math.round(media(s)), mC:Math.round(media(c))};
   }
 
@@ -438,6 +461,8 @@ timeline.push(schermataTesto(
   "<h2>Test di associazione implicita</h2><p style='text-align:center;'>Il test prevede 3 argomenti, ciascuno con 4 fasi.<br>In ogni fase ci saranno alcune domande a cui risponderai selezionando uno dei due pulsanti in basso.<br>Per ogni domanda, compariranno in alto due categorie alternative e al centro una parola.<br>La tua risposta consiste nell'associare la parola al centro a una delle categorie in alto tramite i pulsanti.<br>Tocca <b>SINISTRA</b> se la parola appartiene alla categoria a sinistra e <b>DESTRA</b> se appartiene alla categoria a destra.<br>Rispondi il più velocemente possibile restando accurato/a. Se sbagli, dovrai correggere prima di proseguire.</p>"
 ));
 var ordine = shuffle(argomenti);
+// Ordine fisso imposto dal protocollo: la combinazione stereotipica
+// precede sempre quella controstereotipica.
 var stereoPrima = true; 
 extra.ordine_argomenti = ordine.map(a=>a.id).join(' > ');
 extra.ordine_blocchi_combinati = stereoPrima ? 'stereotipica_prima' : 'controstereotipica_prima';
