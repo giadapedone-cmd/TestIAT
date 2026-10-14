@@ -574,8 +574,14 @@ function calcolaDScore(topicId) {
       document.getElementById('pulsante-copia-json').onclick = copiaJsonNegliAppunti;
     }
     document.getElementById('pulsante-avanti-risultati').onclick = function(){
-      if (!isUltima) mostraPagina(i+1);
-    };
+  if (!isUltima) {
+    mostraPagina(i+1);
+  } else {
+    schermo.innerHTML =
+      "<h2>Test concluso</h2>" +
+      "<p style='text-align:center;'>Grazie per aver partecipato. Puoi chiudere questa scheda.</p>";
+  }
+};
   }
   mostraPagina(0);
 }
