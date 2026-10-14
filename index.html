@@ -76,6 +76,26 @@
 var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfh6ZXJQOahPkkx7MnlpZ_YP1JCtDv-zIkWuunNuywTX9MqupyGUu-3aD0nSpvx7IDvQ/exec";
 
 var schermo = document.getElementById('schermo');
+
+// Copia JSON pronta per il download manuale, avviato da un tocco dell'utente.
+// Questo è più affidabile sui browser mobili rispetto al download automatico.
+var pacchettoBackup = '';
+var nomeFileBackup = 'dati_iat_anonimo.json';
+function scaricaBackupManuale(){
+  if (!pacchettoBackup) {
+    alert('La copia dei dati non è ancora pronta. Attendi qualche secondo e riprova.');
+    return;
+  }
+  var blob = new Blob([pacchettoBackup], {type:'application/json;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = nomeFileBackup;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+}
 var REGIONI = ["Abruzzo","Basilicata","Calabria","Campania","Emilia-Romagna","Friuli-Venezia Giulia","Lazio","Liguria","Lombardia","Marche","Molise","Piemonte","Puglia","Sardegna","Sicilia","Toscana","Trentino-Alto Adige","Umbria","Valle d'Aosta","Veneto"];
 
 var target_femminile = ['Giulia','Rossella','Asia','Giada','Rosa','Alessia'];
@@ -414,24 +434,14 @@ function calcolaDScore(topicId) {
   trials.push(riepilogoPartecipante);
 
   var pacchetto = JSON.stringify(trials);
+  // Conserva il JSON per il pulsante manuale mostrato nell'ultima schermata.
+  pacchettoBackup = pacchetto;
+  nomeFileBackup = 'dati_iat_' + (extra.participant_id || 'anonimo') + '.json';
 
-  function scaricaBackup(){
-    var blob = new Blob([pacchetto], {type:'application/json'});
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'dati_iat_'+(extra.participant_id||'anonimo')+'.json';
-    document.body.appendChild(a); // necessario su molti browser mobili: un click su un elemento non ancora nella pagina viene ignorato
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
-  }
-
-  // Il file JSON si scarica SEMPRE sul dispositivo dello studente, non solo
-  // se l'invio al foglio Google fallisce: serve alla docente come copia
-  // individuale da raccogliere (es. su Drive) per l'analisi di popolazione
-  // con lo script Python, indipendentemente dall'esito dell'invio al foglio.
-  scaricaBackup();
+  // Il download NON parte automaticamente: lo studente lo avvia toccando
+  // il pulsante nell'ultima schermata, gesto richiesto/gestito meglio
+  // da Safari e Chrome su dispositivi mobili. L'invio al server continua
+  // separatamente in background.
 
   // L'invio al foglio Google parte SUBITO, in background, mentre lo
   // studente scorre le schermate di risultato: cosi' quando arriva
@@ -490,9 +500,9 @@ function calcolaDScore(topicId) {
   }
 
   function testoStato(){
-    if (statoInvio === 'ok') return "<p style='font-size:13px;color:#2e7d32;text-align:center;'>Dati inviati. Grazie!</p>";
-    if (statoInvio === 'fallito' || statoInvio === 'non-configurato') return "<p style='font-size:13px;color:#b45309;text-align:center;'>Invio al server non riuscito: una copia di riserva è stata scaricata sul telefono, invia il file alla docente.</p>";
-    return "<p style='font-size:13px;color:#7f8c8d;text-align:center;'>Invio in corso...</p>";
+    if (statoInvio === 'ok') return "<p style='font-size:13px;color:#2e7d32;text-align:center;'>Richiesta di invio completata. Per sicurezza, scarica anche una copia JSON usando il pulsante qui sotto.</p>";
+    if (statoInvio === 'fallito' || statoInvio === 'non-configurato') return "<p style='font-size:13px;color:#b45309;text-align:center;'>Non è stato possibile completare l'invio al server. Scarica la copia JSON con il pulsante qui sotto e inviala alla docente.</p>";
+    return "<p style='font-size:13px;color:#7f8c8d;text-align:center;'>Invio al server in corso. Puoi scaricare la copia JSON anche mentre attendi.</p>";
   }
 
   var pagine = argomenti.map(paginaTempi).concat(argomenti.map(paginaDScore));
@@ -503,7 +513,11 @@ function calcolaDScore(topicId) {
     schermoSuUltima = isUltima;
     var extraFinale = isUltima ? testoStato() : "";
     schermo.innerHTML = "<div>"+pagine[i]+"</div>"+extraFinale+
+      (isUltima ? "<button type='button' id='pulsante-scarica-json' style='display:block;width:100%;padding:14px;margin-top:20px;background:#198754;color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;'>Scarica copia dei dati (JSON)</button>" : "")+
       "<button id='pulsante-avanti-risultati' style='margin-top:20px;'>"+(isUltima ? 'Fine' : 'Avanti')+"</button>";
+    if (isUltima) {
+      document.getElementById('pulsante-scarica-json').onclick = scaricaBackupManuale;
+    }
     document.getElementById('pulsante-avanti-risultati').onclick = function(){
       if (!isUltima) mostraPagina(i+1);
     };
