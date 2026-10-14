@@ -77,24 +77,61 @@ var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfh6ZXJQOahPkkx7
 
 var schermo = document.getElementById('schermo');
 
-// Copia JSON pronta per il download manuale, avviato da un tocco dell'utente.
-// Questo è più affidabile sui browser mobili rispetto al download automatico.
+// Copia JSON pronta per il download manuale.
 var pacchettoBackup = '';
 var nomeFileBackup = 'dati_iat_anonimo.json';
-function scaricaBackupManuale(){
+var urlBackupTemporaneo = '';
+
+function preparaUrlBackup() {
   if (!pacchettoBackup) {
     alert('La copia dei dati non è ancora pronta. Attendi qualche secondo e riprova.');
-    return;
+    return '';
+  }
+  if (urlBackupTemporaneo) {
+    try { URL.revokeObjectURL(urlBackupTemporaneo); } catch(e) {}
   }
   var blob = new Blob([pacchettoBackup], {type:'application/json;charset=utf-8'});
-  var url = URL.createObjectURL(blob);
+  urlBackupTemporaneo = URL.createObjectURL(blob);
+  return urlBackupTemporaneo;
+}
+
+// Pulsante principale: avvia il download con il nome JSON previsto.
+function scaricaBackupManuale() {
+  var url = preparaUrlBackup();
+  if (!url) return;
   var a = document.createElement('a');
   a.href = url;
-  a.download = nomeFileBackup;
+  a.setAttribute('download', nomeFileBackup);
+  a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  // Manteniamo l'URL disponibile: alcuni browser mobili gestiscono il download
+  // in modo asincrono.
+  setTimeout(function() {
+    if (urlBackupTemporaneo) {
+      try { URL.revokeObjectURL(urlBackupTemporaneo); } catch(e) {}
+      urlBackupTemporaneo = '';
+    }
+  }, 120000);
+}
+
+// Alternativa per browser che non scaricano direttamente i Blob:
+// apre il JSON in una nuova scheda, da cui può essere salvato/condiviso.
+function apriBackupInNuovaScheda() {
+  var url = preparaUrlBackup();
+  if (!url) return;
+  var nuovaScheda = window.open(url, '_blank');
+  if (!nuovaScheda) {
+    alert('Il browser ha bloccato la nuova scheda. Consenti i popup per questa pagina oppure apri il test direttamente dal suo indirizzo GitHub Pages.');
+    return;
+  }
+  setTimeout(function() {
+    if (urlBackupTemporaneo) {
+      try { URL.revokeObjectURL(urlBackupTemporaneo); } catch(e) {}
+      urlBackupTemporaneo = '';
+    }
+  }, 120000);
 }
 var REGIONI = ["Abruzzo","Basilicata","Calabria","Campania","Emilia-Romagna","Friuli-Venezia Giulia","Lazio","Liguria","Lombardia","Marche","Molise","Piemonte","Puglia","Sardegna","Sicilia","Toscana","Trentino-Alto Adige","Umbria","Valle d'Aosta","Veneto"];
 
@@ -513,10 +550,12 @@ function calcolaDScore(topicId) {
     schermoSuUltima = isUltima;
     var extraFinale = isUltima ? testoStato() : "";
     schermo.innerHTML = "<div>"+pagine[i]+"</div>"+extraFinale+
-      (isUltima ? "<button type='button' id='pulsante-scarica-json' style='display:block;width:100%;padding:14px;margin-top:20px;background:#198754;color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;'>Scarica copia dei dati (JSON)</button>" : "")+
+      (isUltima ? "<button type='button' id='pulsante-scarica-json' style='display:block;width:100%;padding:14px;margin-top:20px;background:#198754;color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;'>Scarica copia dei dati (JSON)</button>" +
+       "<button type='button' id='pulsante-apri-json' style='display:block;width:100%;padding:12px;margin-top:10px;background:#343a40;color:white;border:none;border-radius:8px;font-size:15px;cursor:pointer;'>Se non parte, apri il JSON in una nuova scheda</button>" : "")+
       "<button id='pulsante-avanti-risultati' style='margin-top:20px;'>"+(isUltima ? 'Fine' : 'Avanti')+"</button>";
     if (isUltima) {
       document.getElementById('pulsante-scarica-json').onclick = scaricaBackupManuale;
+      document.getElementById('pulsante-apri-json').onclick = apriBackupInNuovaScheda;
     }
     document.getElementById('pulsante-avanti-risultati').onclick = function(){
       if (!isUltima) mostraPagina(i+1);
