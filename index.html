@@ -77,61 +77,74 @@ var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfh6ZXJQOahPkkx7
 
 var schermo = document.getElementById('schermo');
 
-// Copia JSON pronta per il download manuale.
+// Backup locale: conserva i dati e offre più metodi compatibili con browser desktop e mobili.
 var pacchettoBackup = '';
 var nomeFileBackup = 'dati_iat_anonimo.json';
-var urlBackupTemporaneo = '';
 
-function preparaUrlBackup() {
+function mostraCopiaJson() {
+  var area = document.getElementById('area-copia-json');
+  if (!area) return;
+  area.style.display = 'block';
+  var testo = document.getElementById('testo-copia-json');
+  if (testo) {
+    testo.value = pacchettoBackup || '';
+    testo.focus();
+    testo.select();
+  }
+}
+
+async function scaricaBackupManuale() {
   if (!pacchettoBackup) {
-    alert('La copia dei dati non è ancora pronta. Attendi qualche secondo e riprova.');
-    return '';
-  }
-  if (urlBackupTemporaneo) {
-    try { URL.revokeObjectURL(urlBackupTemporaneo); } catch(e) {}
-  }
-  var blob = new Blob([pacchettoBackup], {type:'application/json;charset=utf-8'});
-  urlBackupTemporaneo = URL.createObjectURL(blob);
-  return urlBackupTemporaneo;
-}
-
-// Pulsante principale: avvia il download con il nome JSON previsto.
-function scaricaBackupManuale() {
-  var url = preparaUrlBackup();
-  if (!url) return;
-  var a = document.createElement('a');
-  a.href = url;
-  a.setAttribute('download', nomeFileBackup);
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  // Manteniamo l'URL disponibile: alcuni browser mobili gestiscono il download
-  // in modo asincrono.
-  setTimeout(function() {
-    if (urlBackupTemporaneo) {
-      try { URL.revokeObjectURL(urlBackupTemporaneo); } catch(e) {}
-      urlBackupTemporaneo = '';
-    }
-  }, 120000);
-}
-
-// Alternativa per browser che non scaricano direttamente i Blob:
-// apre il JSON in una nuova scheda, da cui può essere salvato/condiviso.
-function apriBackupInNuovaScheda() {
-  var url = preparaUrlBackup();
-  if (!url) return;
-  var nuovaScheda = window.open(url, '_blank');
-  if (!nuovaScheda) {
-    alert('Il browser ha bloccato la nuova scheda. Consenti i popup per questa pagina oppure apri il test direttamente dal suo indirizzo GitHub Pages.');
+    alert('I dati non sono ancora pronti. Attendi che compaia la schermata finale e riprova.');
     return;
   }
-  setTimeout(function() {
-    if (urlBackupTemporaneo) {
-      try { URL.revokeObjectURL(urlBackupTemporaneo); } catch(e) {}
-      urlBackupTemporaneo = '';
+
+  // Su iPhone/iPad e su alcuni browser Android, la condivisione di un file
+  // permette di scegliere esplicitamente "Salva su File" o un'altra app.
+  try {
+    if (navigator.share && typeof File === 'function') {
+      var file = new File([pacchettoBackup], nomeFileBackup, {type:'application/json'});
+      if (!navigator.canShare || navigator.canShare({files:[file]})) {
+        await navigator.share({files:[file], title:'Copia dati IAT', text:'Copia locale dei dati del test'});
+        return;
+      }
     }
-  }, 120000);
+  } catch (e) {
+    // Se l'utente annulla la condivisione, non apriamo altri popup.
+    if (e && e.name === 'AbortError') return;
+  }
+
+  // Fallback per browser desktop o browser che non supportano la condivisione.
+  try {
+    var blob = new Blob([pacchettoBackup], {type:'application/json;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = nomeFileBackup;
+    a.style.position = 'fixed';
+    a.style.left = '-10000px';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 120000);
+  } catch (e) {
+    mostraCopiaJson();
+    alert('Il browser non ha avviato il download. Si è aperta la copia dei dati: usa Copia JSON e incollala in un file di testo da salvare con il nome mostrato.');
+  }
+}
+
+function copiaJsonNegliAppunti() {
+  var testo = document.getElementById('testo-copia-json');
+  if (!testo) return;
+  testo.value = pacchettoBackup || '';
+  testo.focus();
+  testo.select();
+  try {
+    var ok = document.execCommand('copy');
+    alert(ok ? 'JSON copiato. Incollalo in un editor di testo e salva il file come ' + nomeFileBackup : 'Testo selezionato: scegli Copia dal menu del dispositivo, poi incollalo in un file di testo.');
+  } catch(e) {
+    alert('Testo selezionato: scegli Copia dal menu del dispositivo, poi incollalo in un file di testo.');
+  }
 }
 var REGIONI = ["Abruzzo","Basilicata","Calabria","Campania","Emilia-Romagna","Friuli-Venezia Giulia","Lazio","Liguria","Lombardia","Marche","Molise","Piemonte","Puglia","Sardegna","Sicilia","Toscana","Trentino-Alto Adige","Umbria","Valle d'Aosta","Veneto"];
 
@@ -533,7 +546,7 @@ function calcolaDScore(topicId) {
     return "<h3>"+a.titolo+" — Punteggio D</h3>"+
       "<p style='text-align:center;font-size:30px;font-weight:bold;'>"+dTesto+"</p>"+
       "<p style='text-align:center;'>"+frasePerD(d)+"</p>"+
-      "<p style='font-size:12px;color:#7f8c8d;text-align:center;margin-top:10px;'>>Il punteggio può variare da <b>-2</b> a <b>+2</b>: se vicino allo zero implica nessuna associazione implicita rilevante; più si allontana dallo zero (in positivo), più forte sarà l'associazione in direzione dello stereotipo; più si allontana dallo zero (in negativo), più forte sarà l'associazione in direzione contraria allo stereotipo. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo test..</p>";
+      "<p style='font-size:12px;color:#7f8c8d;text-align:center;margin-top:10px;'>Il punteggio può variare da <b>-2</b> a <b>+2</b>: se vicino allo zero implica nessuna associazione implicita rilevante; più si allontana dallo zero (in positivo), più forte sarà l'associazione in direzione dello stereotipo; più si allontana dallo zero (in negativo), più forte sarà l'associazione in direzione contraria allo stereotipo. Non è un giudizio sulla persona: riflette solo i tempi di reazione in questo test..</p>";
   }
 
   function testoStato(){
@@ -550,12 +563,15 @@ function calcolaDScore(topicId) {
     schermoSuUltima = isUltima;
     var extraFinale = isUltima ? testoStato() : "";
     schermo.innerHTML = "<div>"+pagine[i]+"</div>"+extraFinale+
-      (isUltima ? "<button type='button' id='pulsante-scarica-json' style='display:block;width:100%;padding:14px;margin-top:20px;background:#198754;color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;'>Scarica copia dei dati (JSON)</button>" +
-       "<button type='button' id='pulsante-apri-json' style='display:block;width:100%;padding:12px;margin-top:10px;background:#343a40;color:white;border:none;border-radius:8px;font-size:15px;cursor:pointer;'>Se non parte, apri il JSON in una nuova scheda</button>" : "")+
+      (isUltima ? "<button type='button' id='pulsante-scarica-json' style='display:block;width:100%;padding:14px;margin-top:20px;background:#198754;color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;'>Salva copia JSON sul dispositivo</button>"+
+       "<button type='button' id='pulsante-mostra-json' style='display:block;width:100%;padding:12px;margin-top:10px;background:#343a40;color:white;border:none;border-radius:8px;font-size:15px;cursor:pointer;'>Se il download non parte: mostra/copia i dati</button>"+
+       "<div id='area-copia-json' style='display:none;margin-top:12px;'><p style='font-size:13px;'>Puoi copiare il contenuto e incollarlo in un editor di testo. Salva il file con il nome <b id='nome-file-json'></b>.</p><textarea id='testo-copia-json' readonly style='width:100%;min-height:180px;font-size:12px;'></textarea><button type='button' id='pulsante-copia-json' style='width:100%;padding:12px;margin-top:8px;'>Copia JSON</button></div>" : "")+
       "<button id='pulsante-avanti-risultati' style='margin-top:20px;'>"+(isUltima ? 'Fine' : 'Avanti')+"</button>";
     if (isUltima) {
+      document.getElementById('nome-file-json').textContent = nomeFileBackup;
       document.getElementById('pulsante-scarica-json').onclick = scaricaBackupManuale;
-      document.getElementById('pulsante-apri-json').onclick = apriBackupInNuovaScheda;
+      document.getElementById('pulsante-mostra-json').onclick = mostraCopiaJson;
+      document.getElementById('pulsante-copia-json').onclick = copiaJsonNegliAppunti;
     }
     document.getElementById('pulsante-avanti-risultati').onclick = function(){
       if (!isUltima) mostraPagina(i+1);
