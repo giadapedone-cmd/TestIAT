@@ -136,7 +136,7 @@ function schermataDatiPartecipante(){
     schermo.innerHTML =
       "<h2>Prima di iniziare</h2><p style='color:#555;font-size:14px;text-align:center;'>Questi dati servono solo per l'analisi statistica in forma aggregata.</p>"+
       "<label>Codice identificativo</label><input id='c-id' type='text'>"+
-      "<label>Dipositivo utilizzato per eseguire il test</label><input id='c-disp' type='text'>"+
+      "<label>Dipositivo utilizzato per eseguire il test</label><input select id='c-disp'><option value=''>-- seleziona --</option><option>Cellulare</option><option>Computer</option><option>Tablet</option></select>"+
       "<label>Età</label><input id='c-eta' type='number' min='16' max='99'>"+
       "<label>Genere</label><select id='c-sesso'><option value=''>-- seleziona --</option><option>Femmina</option><option>Maschio</option><option>Preferisco non specificare</option></select>"+
       "<label>Paese di residenza</label><select id='c-paese'><option value=''>-- seleziona --</option>"+opzPaesi+"</select>"+
