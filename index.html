@@ -134,8 +134,15 @@ var PAESI = ["Italia","Francia","Germania","Spagna","Svizzera","Romania","Albani
 // modulo iniziale id/dispositivo/età/sesso/paese/regione
 function schermataDatiPartecipante(){
   return function(){
-    var opzRegioni = REGIONI.map(r => "<option value='"+r+"'>"+r+"</option>").join("");
-    var opzPaesi = PAESI.map(p => "<option value='"+p+"'>"+p+"</option>").join("");
+   
+var opzRegioni = REGIONI.map(r =>
+  "<option value='"+r+"'"+(r === 'Piemonte' ? " selected" : "")+">"+r+"</option>"
+).join("");
+
+var opzPaesi = PAESI.map(p =>
+  "<option value='"+p+"'"+(p === 'Italia' ? " selected" : "")+">"+p+"</option>"
+).join("");
+
     schermo.innerHTML =
       "<h2>Prima di iniziare</h2><p style='color:#555;font-size:14px;text-align:center;'>Questi dati servono solo per l'analisi statistica in forma aggregata.</p>"+
       "<label>Codice identificativo</label><input id='c-id' type='text'>"+
