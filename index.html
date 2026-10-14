@@ -66,7 +66,7 @@
 <form id="form-invio-dati" method="POST" target="iframe-invio-nascosto" style="display:none;">
   <input type="hidden" name="payload" id="campo-payload">
 </form>
-<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#ccc;z-index:9999;">versione pagina: v6-dscore-senza-penalita</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:10px;color:#ccc;z-index:9999;">versione pagina: v6-dscore-penalita600-adattato</div>
 
 <script>
 // ============================================================
@@ -252,51 +252,48 @@ function fineTest(){
   }
 
   // ------------------------------------------------------------------
-  // SCORING (algoritmo di Greenwald, Nosek e Banaji, 2003), adattato a
-  // 4 fasi: ogni condizione (stereotipica / controstereotipica) ha un
-  // solo blocco combinato per tema, quindi non esiste la distinzione
-  // pratica/test e vale la formula semplice:
-  //     D = (media_controstereotipica - media_stereotipica) / SD_combinata
-  // Valore positivo = risposte più rapide nella condizione stereotipica.
-  // Passi:
-  //  1. si eliminano le prove con RT > 10.000 ms;
-  //  2. si escludono i partecipanti con più del 10% di prove combinate
-  //     valide la cui PRIMA risposta (rt_primo_tentativo) è < 300 ms;
-  //  3. la SD (campionaria, n-1) si calcola sui tempi delle due condizioni
-  //     riuniti;
-  //  4. GESTIONE DEGLI ERRORI: l'app richiede la correzione obbligatoria e
-  //     rt include già il tempo fino alla risposta corretta. Quindi NON si
-  //     applica la sostituzione "media dei corretti + 600 ms" (che
-  //     duplicherebbe la penalità). Scelta da confermare con la relatrice;
-  //  5. si calcolano le medie dei due blocchi e si applica la formula.
-  // Il punteggio mostrato allo studente è solo un riscontro immediato;
-  // il valore ufficiale resta quello ricalcolato sui dati salvati.
+  // SCORING: adattamento del D-score di Greenwald, Nosek e Banaji (2003)
+  // alla struttura richiesta di 4 test.
+  //
+  // NOTA METODOLOGICA: questa versione ha un solo blocco combinato per
+  // condizione e argomento; quindi non può calcolare la media dei due
+  // D-score separati (pratica e test) prevista dalla procedura classica.
+  // Calcola un D adattato confrontando il blocco stereotipico con quello
+  // controstereotipico.
+  //
+  // Criteri:
+  // 1. Escludere prove con latenza del primo tentativo > 10.000 ms.
+  // 2. Escludere il partecipante se >10% delle prove combinate valide ha
+  //    una prima risposta <300 ms.
+  // 3. Per le risposte corrette usare la latenza del primo tentativo.
+  // 4. Per ogni errore sostituire la latenza con la media delle risposte
+  //    corrette del medesimo blocco + 600 ms.
+  // 5. D = (media controstereotipica - media stereotipica) / SD campionaria
+  //    dei tempi aggiustati delle due condizioni riunite.
+  // D positivo = risposte più rapide nella condizione stereotipica.
   // ------------------------------------------------------------------
 
-  // Seleziona le prove combinate valide di ciascun argomento.
-  // rt è il tempo dalla comparsa della parola alla risposta corretta.
-  // rt_primo_tentativo è usato per identificare risposte iniziali troppo rapide.
+  // Le latenze di scoring sono basate sulla prima risposta: rt_primo_tentativo
+  // misura la latenza iniziale; rt registra invece il tempo fino alla
+  // risposta corretta dopo eventuali errori ed è conservato nei dati grezzi.
   function proveValide(topicId) {
     return trials.filter(function(tr) {
       return tr.trial_type === 'iat-touch' &&
         tr.block === 'combinato' &&
         tr.topic === topicId &&
-        Number.isFinite(tr.rt) &&
-        tr.rt > 0 &&
-        tr.rt <= 10000 &&
         Number.isFinite(tr.rt_primo_tentativo) &&
+        tr.rt_primo_tentativo > 0 &&
+        tr.rt_primo_tentativo <= 10000 &&
         (tr.condizione === 'stereotipica' ||
          tr.condizione === 'controstereotipica');
     });
   }
 
-  // Criterio di qualità a livello di partecipante:
-  // escludi se oltre il 10% delle prove combinate valide
-  // presenta una prima risposta sotto i 300 ms.
+  // Criterio di qualità a livello di partecipante: più del 10% di prime
+  // risposte sotto i 300 ms nelle prove combinate valide.
   var proveCombinateTutte = [];
   argomenti.forEach(function(a) {
-    proveCombinateTutte =
-      proveCombinateTutte.concat(proveValide(a.id));
+    proveCombinateTutte = proveCombinateTutte.concat(proveValide(a.id));
   });
 
   var partecipanteEscluso =
@@ -305,65 +302,81 @@ function fineTest(){
       return tr.rt_primo_tentativo < 300;
     }).length / proveCombinateTutte.length > 0.10;
 
-  function calcolaDScore(topicId) {
-    if (partecipanteEscluso) return null;
-
-    var t = proveValide(topicId);
-
-    var stereo = t.filter(function(tr) {
-      return tr.condizione === 'stereotipica';
+  // Calcola le latenze da usare nello scoring. Gli errori sono sostituiti
+  // con la media dei trial corretti nello stesso blocco + 600 ms.
+  function tempiAggiustati(prove) {
+    var corretti = prove.filter(function(tr) {
+      return tr.correct === true && Number.isFinite(tr.rt_primo_tentativo);
     });
+    if (!corretti.length) return null;
 
-    var contro = t.filter(function(tr) {
-      return tr.condizione === 'controstereotipica';
+    var mediaCorretti = media(corretti.map(function(tr) {
+      return tr.rt_primo_tentativo;
+    }));
+
+    return prove.map(function(tr) {
+      if (tr.correct === true) return tr.rt_primo_tentativo;
+      return mediaCorretti + 600;
     });
-
-    if (stereo.length < 2 || contro.length < 2) return null;
-
-    // Il tempo rt include il tempo necessario a correggere
-    // un eventuale errore. Per questo metodo non aggiungiamo
-    // anche la penalità media + 600 ms.
-    var rtStereo = stereo.map(function(tr) {
-      return tr.rt;
-    });
-
-    var rtContro = contro.map(function(tr) {
-      return tr.rt;
-    });
-
-    // Deviazione standard campionaria comune delle due condizioni.
-    var tuttiRT = rtStereo.concat(rtContro);
-    var sd = deviazioneStandard(tuttiRT);
-
-    if (!Number.isFinite(sd) || sd <= 0) return null;
-
-    // D positivo: tempi più rapidi nella condizione stereotipica.
-    // D negativo: tempi più rapidi nella condizione controstereotipica.
-    return (media(rtContro) - media(rtStereo)) / sd;
   }
 
-  // Tempi medi mostrati nei risultati: usa gli stessi tempi
-  // impiegati nel calcolo del D-score.
+ 
+function calcolaDScore(topicId) {
+  if (partecipanteEscluso) return null;
+
+  var t = proveValide(topicId);
+
+  var stereo = t.filter(function(tr) {
+    return tr.condizione === 'stereotipica';
+  });
+
+  var contro = t.filter(function(tr) {
+    return tr.condizione === 'controstereotipica';
+  });
+
+  if (stereo.length < 2 || contro.length < 2) return null;
+
+  // Medie dei tempi aggiustati: gli errori valgono
+  // la media delle risposte corrette del blocco + 600 ms.
+  var rtStereo = tempiAggiustati(stereo);
+  var rtContro = tempiAggiustati(contro);
+
+  if (!rtStereo || !rtContro) return null;
+
+  // Deviazione standard calcolata sui tempi del primo tentativo
+  // ORIGINALI, prima della sostituzione degli errori.
+  var tuttiRT = stereo.concat(contro).map(function(tr) {
+    return tr.rt_primo_tentativo;
+  });
+
+  var sd = deviazioneStandard(tuttiRT);
+
+  if (!Number.isFinite(sd) || sd <= 0) return null;
+
+  // D = differenza tra le medie aggiustate / SD dei tempi originali.
+  return (media(rtContro) - media(rtStereo)) / sd;
+}
+
+
+  // I tempi medi mostrati nei risultati usano la stessa correzione errori
+  // applicata al D-score, così il riepilogo resta coerente con l'indice.
   function sintesi(topicId) {
     var t = proveValide(topicId);
-
     var stereo = t.filter(function(tr) {
       return tr.condizione === 'stereotipica';
     });
-
     var contro = t.filter(function(tr) {
       return tr.condizione === 'controstereotipica';
     });
-
     if (!stereo.length || !contro.length) return null;
 
+    var rtStereo = tempiAggiustati(stereo);
+    var rtContro = tempiAggiustati(contro);
+    if (!rtStereo || !rtContro) return null;
+
     return {
-      mS: Math.round(media(stereo.map(function(tr) {
-        return tr.rt;
-      }))),
-      mC: Math.round(media(contro.map(function(tr) {
-        return tr.rt;
-      })))
+      mS: Math.round(media(rtStereo)),
+      mC: Math.round(media(rtContro))
     };
   }
 
